@@ -1,10 +1,13 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
+use Kreait\Firebase\Auth as FirebaseAuth;
+use Kreait\Firebase\Factory;
 
 Route::get('/', function () {
     return view('welcome');
@@ -47,6 +50,37 @@ Route::get('/auth/google/callback', function () {
 
     } catch (\Exception $e) {
         return redirect('/')->with('error', 'Error al autenticar con Google.');
+    }
+});
+
+#firebase
+Route::post('/login-google', function (Request $request) {
+    $idToken = $request->input('id_token');
+
+    $firebase = (new Factory)
+        ->withServiceAccount(config('firebase.credentials.file'));
+    $auth = $firebase->createAuth();
+
+    try {
+        $verifiedIdToken = $auth->verifyIdToken($idToken);
+        $firebaseUserId = $verifiedIdToken->claims()->get('sub');
+        $email = $verifiedIdToken->claims()->get('email');
+
+        // Crear o buscar usuario
+        $user = User::firstOrCreate(
+            ['email' => $email],
+            ['firebase_uid' => $firebaseUserId, 'name' => $email]
+        );
+
+        // Generar token (si usas Sanctum o Passport)
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => 'Token inválido: ' . $e->getMessage()], 401);
     }
 });
 

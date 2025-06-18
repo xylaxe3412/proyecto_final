@@ -60,13 +60,57 @@
                 <!-- Form -->
                 <form class="mt-8 space-y-4" action="{{ route('register') }}" method="POST">
                     @csrf
-                    <!-- Google Sign Up -->
-                        <a href="{{ route('google.login') }}"
-                            class="flex items-center justify-center w-full border border-gray-300 py-2 rounded-md mb-4 bg-white hover:bg-gray-50">
-                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5 mr-2">
-                            Continuar con Google
-                        </a>
-                    <!-- Divider -->
+<!-- Firebase App -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDpJzGeU9krJ1-ve4XAvWU9Qfv7nw307SE",
+  authDomain: "motiveo-463112.firebaseapp.com",
+  projectId: "motiveo-463112",
+  storageBucket: "motiveo-463112.firebasestorage.app",
+  messagingSenderId: "778137738545",
+  appId: "1:778137738545:web:b5491b1e0ec4b4041fe410",
+  measurementId: "G-BF2MZENHVK"
+};
+    
+ // Inicializa Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  function loginWithGoogle() {
+    firebase.auth().signInWithPopup(provider)
+      .then(async (result) => {
+        const user = result.user;
+        const idToken = await user.getIdToken();
+
+        // Enviar token al backend Laravel
+        const response = await fetch("http://127.0.0.1:8000/api/login-google", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_token: idToken }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          alert("¡Login exitoso!");
+          // Guardar token o redirigir
+        } else {
+          alert("Fallo en autenticación backend: " + data.error);
+        }
+      })
+      .catch((error) => {
+        console.error("Error en login Firebase:", error);
+        alert("Error al iniciar sesión con Google");
+      });
+  }
+</script>
+
+<!-- Botón -->
+<button onclick="loginWithGoogle()">Iniciar sesión con Google</button>
+
                     <div class="relative my-6">
                         <div class="absolute inset-0 flex items-center">
                             <div class="w-full border-t border-gray-300"></div>
