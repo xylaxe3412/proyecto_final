@@ -18,7 +18,10 @@ return array(
     'App\\Http\\Controllers\\Auth\\RegisteredUserController' => $baseDir . '/app/Http/Controllers/Auth/RegisteredUserController.php',
     'App\\Http\\Controllers\\Auth\\VerifyEmailController' => $baseDir . '/app/Http/Controllers/Auth/VerifyEmailController.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
+<<<<<<< HEAD
     'App\\Http\\Controllers\\DashboardController' => $baseDir . '/app/Http/Controllers/DashboardController.php',
+=======
+>>>>>>> 67eb95f44ae58db7ce3a1ff1ee249f01ccb1cbc7
     'App\\Http\\Controllers\\ProfileController' => $baseDir . '/app/Http/Controllers/ProfileController.php',
     'App\\Http\\Requests\\Auth\\LoginRequest' => $baseDir . '/app/Http/Requests/Auth/LoginRequest.php',
     'App\\Http\\Requests\\ProfileUpdateRequest' => $baseDir . '/app/Http/Requests/ProfileUpdateRequest.php',

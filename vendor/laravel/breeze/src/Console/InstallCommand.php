@@ -122,6 +122,7 @@ class InstallCommand extends Command implements PromptsForMissingInput
             ->whenNotEmpty(function ($names) use ($bootstrapApp, $group, $modifier) {
                 $names = $names->map(fn ($name) => "$name")->implode(','.PHP_EOL.'            ');
 
+<<<<<<< HEAD
                 $stubs = [
                     '->withMiddleware(function (Middleware $middleware) {',
                     '->withMiddleware(function (Middleware $middleware): void {',
@@ -135,6 +136,15 @@ class InstallCommand extends Command implements PromptsForMissingInput
                         .PHP_EOL.'        ]);'
                         .PHP_EOL
                     )->all(),
+=======
+                $bootstrapApp = str_replace(
+                    '->withMiddleware(function (Middleware $middleware) {',
+                    '->withMiddleware(function (Middleware $middleware) {'
+                        .PHP_EOL."        \$middleware->$group($modifier: ["
+                        .PHP_EOL."            $names,"
+                        .PHP_EOL.'        ]);'
+                        .PHP_EOL,
+>>>>>>> 67eb95f44ae58db7ce3a1ff1ee249f01ccb1cbc7
                     $bootstrapApp,
                 );
 
@@ -157,6 +167,7 @@ class InstallCommand extends Command implements PromptsForMissingInput
             ->whenNotEmpty(function ($aliases) use ($bootstrapApp) {
                 $aliases = $aliases->map(fn ($name, $alias) => "'$alias' => $name")->implode(','.PHP_EOL.'            ');
 
+<<<<<<< HEAD
                 $stubs = [
                     '->withMiddleware(function (Middleware $middleware) {',
                     '->withMiddleware(function (Middleware $middleware): void {',
@@ -170,6 +181,15 @@ class InstallCommand extends Command implements PromptsForMissingInput
                         .PHP_EOL.'        ]);'
                         .PHP_EOL
                     )->all(),
+=======
+                $bootstrapApp = str_replace(
+                    '->withMiddleware(function (Middleware $middleware) {',
+                    '->withMiddleware(function (Middleware $middleware) {'
+                        .PHP_EOL.'        $middleware->alias(['
+                        .PHP_EOL."            $aliases,"
+                        .PHP_EOL.'        ]);'
+                        .PHP_EOL,
+>>>>>>> 67eb95f44ae58db7ce3a1ff1ee249f01ccb1cbc7
                     $bootstrapApp,
                 );
 
