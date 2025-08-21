@@ -88,6 +88,37 @@ class Habit extends Model
     }
 
     /**
+     * Deshacer la completación del hábito de hoy
+     */
+    public function undoCompletion()
+    {
+        // Verificar que fue completado hoy
+        if (!$this->completed_today || !$this->last_completed_at || !$this->last_completed_at->isToday()) {
+            return false;
+        }
+
+        // Revertir cambios
+        $this->update([
+            'completed_today' => false,
+            'last_completed_at' => null,
+            'current_day' => max(0, $this->current_day - 1),
+            'dias_racha' => max(0, $this->dias_racha - 1),
+            'progreso_actual' => max(0, $this->progreso_actual - 1),
+            'next_due_date' => now()->format('Y-m-d'),
+        ]);
+
+        // Si estaba inactivo por completar el período, reactivarlo
+        if (!$this->is_active && $this->current_day < $this->duration_days) {
+            $this->update(['is_active' => true]);
+        }
+
+        // Quitar XP al usuario
+        $this->user->subtractXP(20, "Deshacer habito: {$this->nombre}");
+
+        return true;
+    }
+
+    /**
      * Resetear estado diario (ejecutar automáticamente cada día)
      */
     public function resetDailyStatus()

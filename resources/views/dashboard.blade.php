@@ -26,9 +26,143 @@
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Canvas Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        /* Estilos para las tarjetas de hábitos */
+        .habit-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .habit-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Hábitos pendientes - Resaltados */
+        .habit-pending {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.3));
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+            animation: pulseGlow 2s infinite;
+        }
+        
+        /* Hábitos completados */
+        .habit-completed {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(34, 197, 94, 0.3));
+            border: 2px solid #10b981;
+            opacity: 0.8;
+        }
+        
+        /* Animación de resaltado para hábitos pendientes */
+        @keyframes pulseGlow {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+                border-color: #f59e0b;
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+                border-color: #fbbf24;
+            }
+        }
+        
+        /* Vista expandida */
+        .habit-expanded {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            max-width: 900px;
+            height: 90vh;
+            z-index: 1000;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            animation: expandIn 0.3s ease-out;
+        }
+        
+        /* Overlay para vista expandida */
+        .habit-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Animaciones */
+        @keyframes expandIn {
+            from { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0.9); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1); 
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Efectos para pasos completados */
+        .step-completed {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border-color: #10b981;
+        }
+        
+        .step-pending {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Botón de doble confirmación */
+        .confirm-button {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .confirm-button.confirming {
+            background: linear-gradient(90deg, #f59e0b 0%, #f59e0b 50%, #10b981 50%, #10b981 100%);
+            animation: confirmProgress 1.5s ease-in-out;
+        }
+        
+        @keyframes confirmProgress {
+            0% { background-position: -100% 0; }
+            100% { background-position: 100% 0; }
+        }
+        
+        /* Grid responsivo */
+        .habits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .habits-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body class="h-full bg-gradient-to-br from-motiveo-dark via-purple-900 to-indigo-900 font-display" x-data="habitApp()">
     <!-- Header -->
@@ -90,60 +224,169 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Panel - Mis Hábitos y Toggle para Sugerencias -->
-            <div class="space-y-6">
-                <!-- Panel de Mis Hábitos (siempre visible si hay hábitos) -->
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20" x-show="userHabits.length > 0">
-                    <div class="flex items-center justify-between mb-6">
+        <!-- Título y Filtros -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-white mb-2">Mis Hábitos</h2>
+                <p class="text-white/60">Gestiona tus hábitos diarios de forma organizada</p>
+            </div>
+            <div class="flex space-x-3">
+                <button @click="showCreateModal = true" 
+                        class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                    <i class="fas fa-plus mr-2"></i>Nuevo Hábito
+                </button>
+                <button @click="loadUserHabits()" 
+                        class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid de Hábitos -->
+        <div class="habits-grid mb-12" x-show="userHabits.length > 0">
+            <template x-for="habit in userHabits" :key="habit.id">
+                <div class="habit-card bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 cursor-pointer hover:border-motiveo-primary/50 transition-all duration-300"
+                     :class="habit.is_completed ? 'habit-completed' : 'habit-pending'"
+                     @click="expandHabit(habit)"
+                     title="Haz clic para ver detalles del hábito">
+                    
+                    <!-- Header de la tarjeta -->
+                    <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-motiveo-warning rounded-full flex items-center justify-center">
-                                <span class="text-white text-lg">🏆</span>
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center"
+                                 :class="getCategoryStyle(habit.categoria)">
+                                <span class="text-xl" x-text="getCategoryIcon(habit.categoria)"></span>
                             </div>
-                            <h2 class="text-xl font-bold text-white">Mis Hábitos</h2>
-                            <span class="bg-motiveo-success/20 text-motiveo-success px-2 py-1 rounded-full text-xs font-bold" x-text="`${userHabits.length}`"></span>
+                            <div>
+                                <h3 class="text-white font-bold text-lg" x-text="habit.nombre"></h3>
+                                <p class="text-white/60 text-sm capitalize" x-text="habit.categoria"></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Estado visual -->
+                        <div class="flex flex-col items-end">
+                            <div class="w-3 h-3 rounded-full mb-2"
+                                 :class="habit.is_completed ? 'bg-motiveo-success' : 'bg-motiveo-warning'"></div>
+                            <span class="text-xs text-white/60" 
+                                  x-text="habit.is_completed ? 'Completado' : 'Pendiente'"></span>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
-                        <template x-for="habit in userHabits" :key="habit.id">
-                            <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 transition-all cursor-pointer">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 rounded-full flex items-center justify-center"
-                                             :class="getCategoryStyle(habit.categoria)">
-                                            <span class="text-lg" x-text="getCategoryIcon(habit.categoria)"></span>
-                                        </div>
-                                        <div class="flex-1">
-                                            <h3 class="text-white font-semibold" x-text="habit.nombre"></h3>
-                                            <div class="flex items-center space-x-2 text-sm">
-                                                <span class="text-motiveo-success" x-text="`🔥 ${habit.dias_racha} días`"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button @click="completeHabit(habit)"
-                                            :disabled="habit.is_completed"
-                                            :class="habit.is_completed ? 'bg-gray-500' : 'bg-motiveo-success hover:bg-motiveo-success/80'"
-                                            class="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all">
-                                        <span x-text="habit.is_completed ? '✅ Hecho' : 'Completar'"></span>
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
+                    <!-- Descripción breve -->
+                    <p class="text-white/80 text-sm mb-4 line-clamp-2" x-text="habit.descripcion || 'Descripción del hábito'"></p>
+
+                    <!-- Stats -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-4 text-sm">
+                            <span class="text-motiveo-success flex items-center">
+                                <i class="fas fa-fire mr-1"></i>
+                                <span x-text="`${habit.dias_racha} días`"></span>
+                            </span>
+                            <span class="text-motiveo-accent flex items-center">
+                                <i class="fas fa-star mr-1"></i>
+                                <span x-text="`${habit.xp_ganada || 0} XP`"></span>
+                            </span>
+                        </div>
+                        <div class="flex items-center text-xs text-white/60">
+                            <i class="fas fa-calendar mr-1"></i>
+                            <span>Día <span x-text="habit.dias_activo || 1"></span></span>
+                        </div>
                     </div>
 
-                    <button @click="showCreateModal = true" 
-                            class="w-full mt-6 bg-gradient-to-r from-motiveo-primary to-motiveo-secondary text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 flex items-center justify-center">
-                        Crear Nuevo Habito
+                    <!-- Botón de acción -->
+                    <button @click.stop="habit.is_completed ? handleHabitAction(habit.id, 'undo') : handleHabitAction(habit.id, 'complete')"
+                            :disabled="false"
+                            :class="habit.is_completed 
+                                ? 'bg-motiveo-success/20 text-motiveo-success border-motiveo-success/30 hover:bg-motiveo-warning/20 hover:text-motiveo-warning hover:border-motiveo-warning' 
+                                : 'bg-motiveo-warning/20 text-motiveo-warning border-motiveo-warning hover:bg-motiveo-warning hover:text-white'"
+                            class="w-full py-3 px-4 rounded-xl font-semibold transition-all border-2 flex items-center justify-center">
+                        <template x-if="habit.is_completed">
+                            <div class="flex items-center">
+                                <i class="fas fa-undo mr-2"></i>
+                                Deshacer Completado
+                            </div>
+                        </template>
+                        <template x-if="!habit.is_completed">
+                            <div class="flex items-center">
+                                <i class="fas fa-play mr-2"></i>
+                                Iniciar Hábito
+                            </div>
+                        </template>
                     </button>
                 </div>
+            </template>
+        </div>
 
-                <!-- Panel de Sugerencias (siempre visible) -->
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 bg-motiveo-accent rounded-full flex items-center justify-center">
-                                <span class="text-white text-lg">💡</span>
+        <!-- Estado vacío -->
+        <div x-show="userHabits.length === 0" class="text-center py-16">
+            <div class="text-6xl mb-6">🎯</div>
+            <h3 class="text-2xl font-bold text-white mb-4">¡Comienza tu viaje!</h3>
+            <p class="text-white/60 mb-8 max-w-lg mx-auto">
+                Aún no tienes hábitos creados. Comienza creando tu primer hábito y da el primer paso hacia una mejor versión de ti mismo.
+            </p>
+            <button @click="showCreateModal = true" 
+                    class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                <i class="fas fa-rocket mr-2"></i>Crear Mi Primer Hábito
+            </button>
+        </div>
+
+        <!-- Sección de Hábitos Sugeridos -->
+        <div class="mt-16">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Hábitos Sugeridos</h3>
+                    <p class="text-white/60">Descubre nuevos hábitos que podrían interesarte</p>
+                </div>
+                <button @click="loadSuggestions()" 
+                        class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all">
+                    <i class="fas fa-refresh mr-2"></i>Actualizar
+                </button>
+            </div>
+
+            <!-- Grid de Sugerencias -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" x-show="suggestions.popular && suggestions.popular.length > 0">
+                <template x-for="suggestion in suggestions.popular" :key="suggestion.id">
+                    <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
+                         @click="adoptSuggestion(suggestion)">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                                 :class="getCategoryStyle(suggestion.categoria)">
+                                <span class="text-lg" x-text="getCategoryIcon(suggestion.categoria)"></span>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-semibold text-sm" x-text="suggestion.name"></h4>
+                                <p class="text-white/60 text-xs capitalize" x-text="suggestion.categoria"></p>
+                            </div>
+                        </div>
+                        <p class="text-white/70 text-xs mb-3 line-clamp-2" x-text="suggestion.description"></p>
+                        <button class="w-full bg-motiveo-accent/20 text-motiveo-accent py-2 px-3 rounded-lg text-xs font-medium hover:bg-motiveo-accent hover:text-white transition-all">
+                            <i class="fas fa-plus mr-1"></i>Agregar
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Categorías de sugerencias -->
+            <div class="mt-8">
+                <h4 class="text-lg font-semibold text-white mb-4">Explorar por Categoría</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <template x-for="[category, habits] in Object.entries(suggestions.by_category || {})" :key="category">
+                        <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
+                             @click="showCategoryDetails(category, habits)">
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2"
+                                     :class="getCategoryStyle(category)">
+                                    <span class="text-xl" x-text="getCategoryIcon(category)"></span>
+                                </div>
+                                <h5 class="text-white font-medium text-sm capitalize" x-text="category"></h5>
+                                <p class="text-white/60 text-xs" x-text="`${habits.length} hábitos`"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
                             </div>
                             <h2 class="text-xl font-bold text-white">
                                 <span x-show="userHabits.length === 0">¡Comienza tu Viaje!</span>
@@ -659,6 +902,136 @@
         </div>
     </div>
 
+    <!-- Modal de hábito expandido -->
+    <div x-show="expandedHabit" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         @click.self="expandedHabit = null">
+        
+        <div x-show="expandedHabit"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200 transform"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="bg-gradient-to-br from-gray-900/95 to-gray-800/95 backdrop-blur-lg rounded-2xl border border-motiveo-primary/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            
+            <!-- Header del Modal -->
+            <div class="p-6 border-b border-gray-700/50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-motiveo-primary to-purple-600 flex items-center justify-center">
+                            <span x-text="expandedHabit?.icon || '🎯'" class="text-2xl"></span>
+                        </div>
+                        <div>
+                            <h3 x-text="expandedHabit?.name" class="text-xl font-bold text-white"></h3>
+                            <p x-text="expandedHabit?.category" class="text-motiveo-primary capitalize"></p>
+                        </div>
+                    </div>
+                    <button @click="expandedHabit = null" 
+                            class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Estado del hábito -->
+                <div class="mt-4 flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full"
+                             :class="expandedHabit?.is_completed ? 'bg-motiveo-success animate-pulse' : 'bg-motiveo-warning'"></div>
+                        <span class="text-sm text-gray-300" 
+                              x-text="expandedHabit?.is_completed ? 'Completado hoy' : 'Pendiente'"></span>
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        <span x-text="expandedHabit?.current_streak || 0"></span> días consecutivos
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido del Modal -->
+            <div class="p-6 space-y-6">
+                <!-- Descripción -->
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-2">📝 Descripción</h4>
+                    <p x-text="expandedHabit?.description || 'Sin descripción disponible'" 
+                       class="text-gray-300 leading-relaxed"></p>
+                </div>
+
+                <!-- Progreso visual -->
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-3">📊 Progreso</h4>
+                    <div class="bg-gray-800/50 rounded-lg p-4">
+                        <div class="flex justify-between text-sm text-gray-400 mb-2">
+                            <span>Días completados</span>
+                            <span x-text="`${expandedHabit?.completed_days || 0} / ${expandedHabit?.duration_days || 30}`"></span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-3">
+                            <div class="bg-gradient-to-r from-motiveo-primary to-motiveo-success h-3 rounded-full transition-all duration-300"
+                                 :style="`width: ${expandedHabit ? (expandedHabit.completed_days || 0) / (expandedHabit.duration_days || 30) * 100 : 0}%`"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guía paso a paso -->
+                <div x-show="expandedHabit && !expandedHabit.is_completed">
+                    <h4 class="text-lg font-semibold text-white mb-3">🎯 Guía paso a paso</h4>
+                    <div class="space-y-3">
+                        <template x-for="(step, index) in getHabitSteps(expandedHabit)" :key="index">
+                            <div class="flex items-start space-x-3 p-3 rounded-lg bg-gray-800/30 border border-gray-700/50 hover:border-motiveo-primary/30 transition-colors">
+                                <div class="w-6 h-6 rounded-full bg-motiveo-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <span x-text="index + 1" class="text-xs font-bold text-motiveo-primary"></span>
+                                </div>
+                                <div class="flex-1">
+                                    <p x-text="step" class="text-gray-300 text-sm leading-relaxed"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Estadísticas adicionales -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-800/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-motiveo-success" x-text="expandedHabit?.current_streak || 0"></div>
+                        <div class="text-sm text-gray-400">Racha actual</div>
+                    </div>
+                    <div class="bg-gray-800/30 rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-motiveo-warning" x-text="expandedHabit?.best_streak || 0"></div>
+                        <div class="text-sm text-gray-400">Mejor racha</div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="flex flex-col space-y-3 pt-4 border-t border-gray-700/50">
+                    <template x-if="expandedHabit && !expandedHabit.is_completed">
+                        <button @click="handleHabitAction(expandedHabit.id, 'complete')"
+                                class="w-full py-3 px-4 bg-gradient-to-r from-motiveo-success to-emerald-500 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium">
+                            ✅ Marcar como Completado
+                        </button>
+                    </template>
+                    
+                    <template x-if="expandedHabit && expandedHabit.is_completed">
+                        <button @click="handleHabitAction(expandedHabit.id, 'undo')"
+                                class="w-full py-3 px-4 bg-gradient-to-r from-motiveo-warning to-orange-500 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium">
+                            ↩️ Deshacer Completado
+                        </button>
+                    </template>
+                    
+                    <button @click="showEditHabit(expandedHabit)"
+                            class="w-full py-3 px-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium">
+                        ✏️ Editar Hábito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
@@ -693,6 +1066,7 @@
                     show: false,
                     message: ''
                 },
+                expandedHabit: null,
 
                 init() {
                     this.loadUserHabits();
@@ -1010,6 +1384,122 @@
                         'aprendizaje': '📚'
                     };
                     return icons[categoria] || '🎯';
+                },
+
+                // Nuevas funciones para el modal expandido
+                expandHabit(habit) {
+                    this.expandedHabit = habit;
+                },
+
+                async handleHabitAction(habitId, action) {
+                    try {
+                        let endpoint = '';
+                        let method = 'POST';
+                        
+                        if (action === 'complete') {
+                            endpoint = `/habits/${habitId}/complete`;
+                        } else if (action === 'undo') {
+                            endpoint = `/habits/${habitId}/undo`;
+                        }
+
+                        const response = await fetch(endpoint, {
+                            method: method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.showNotification(data.message);
+                            
+                            // Actualizar stats del usuario si están en la respuesta
+                            if (data.user_stats) {
+                                this.userStats = data.user_stats;
+                            }
+                            
+                            // Verificar level-up y mostrar confetti
+                            if (data.leveled_up) {
+                                setTimeout(() => {
+                                    this.launchConfetti();
+                                    this.showNotification(`¡Felicidades! ¡Subiste al nivel ${data.new_level}!`);
+                                }, 500);
+                            }
+                            
+                            // Recargar hábitos y actualizar el expandido
+                            await this.loadUserHabits();
+                            
+                            // Actualizar el hábito expandido con los nuevos datos
+                            if (this.expandedHabit && this.expandedHabit.id === habitId) {
+                                const updatedHabit = this.userHabits.find(h => h.id === habitId);
+                                if (updatedHabit) {
+                                    this.expandedHabit = updatedHabit;
+                                }
+                            }
+                        } else {
+                            this.showNotification(data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error handling habit action:', error);
+                        this.showNotification('Error al procesar la acción. Inténtalo de nuevo.');
+                    }
+                },
+
+                getHabitSteps(habit) {
+                    if (!habit) return [];
+                    
+                    // Generar pasos basados en la categoría del hábito
+                    const stepsByCategory = {
+                        'salud': [
+                            'Prepara el espacio adecuado para la actividad',
+                            'Comienza con una intensidad moderada',
+                            'Mantén un ritmo constante durante la actividad',
+                            'Escucha a tu cuerpo y ajusta según sea necesario',
+                            'Registra tu progreso y cómo te sientes'
+                        ],
+                        'productividad': [
+                            'Elimina las distracciones de tu entorno',
+                            'Define objetivos claros para esta sesión',
+                            'Organiza las tareas por prioridad',
+                            'Trabaja con bloques de tiempo concentrado',
+                            'Evalúa lo logrado y planifica el siguiente paso'
+                        ],
+                        'bienestar': [
+                            'Encuentra un momento de tranquilidad',
+                            'Respira profundamente y relájate',
+                            'Concéntrate en el presente y tus sensaciones',
+                            'Dedica tiempo completo a esta actividad',
+                            'Reflexiona sobre los beneficios obtenidos'
+                        ],
+                        'aprendizaje': [
+                            'Prepara los materiales necesarios',
+                            'Revisa brevemente el contenido anterior',
+                            'Enfócate en comprender conceptos clave',
+                            'Practica lo aprendido con ejemplos',
+                            'Toma notas y resume los puntos importantes'
+                        ]
+                    };
+
+                    // Pasos genéricos si la categoría no está definida
+                    const genericSteps = [
+                        'Prepárate mental y físicamente para la actividad',
+                        'Comienza con enfoque y determinación',
+                        'Mantén la constancia durante todo el proceso',
+                        'Supera cualquier resistencia que puedas sentir',
+                        'Celebra haber completado este hábito positivo'
+                    ];
+
+                    return stepsByCategory[habit.category] || stepsByCategory[habit.categoria] || genericSteps;
+                },
+
+                showEditHabit(habit) {
+                    // Cerrar el modal expandido
+                    this.expandedHabit = null;
+                    
+                    // Aquí podrías abrir un modal de edición o redirigir a una página de edición
+                    this.showNotification('Función de edición próximamente disponible');
                 },
 
                 getCategoryStyle(categoria) {

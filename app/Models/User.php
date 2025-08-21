@@ -76,6 +76,21 @@ class User extends Authenticatable
     }
 
     /**
+     * Restar XP al usuario
+     */
+    public function subtractXP($amount, $reason = 'General')
+    {
+        $this->xp = max(0, $this->xp - $amount); // No permitir XP negativo
+        $this->checkLevelDown();
+        $this->save();
+        
+        // Log XP loss (opcional)
+        \Log::info("Usuario {$this->id} perdió {$amount} XP por: {$reason}");
+        
+        return $this;
+    }
+
+    /**
      * Verificar si el usuario debe subir de nivel
      */
     private function checkLevelUp()
@@ -84,6 +99,18 @@ class User extends Authenticatable
         if ($newLevel > $this->level) {
             $this->level = $newLevel;
             // Aquí podrías disparar un evento de subida de nivel
+        }
+    }
+
+    /**
+     * Verificar si el usuario debe bajar de nivel
+     */
+    private function checkLevelDown()
+    {
+        $newLevel = $this->calculateLevel($this->xp);
+        if ($newLevel < $this->level) {
+            $this->level = $newLevel;
+            // Aquí podrías disparar un evento de bajada de nivel si es necesario
         }
     }
 

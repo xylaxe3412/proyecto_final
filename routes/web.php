@@ -16,6 +16,30 @@ use App\Http\Controllers\HabitController;
 use App\Http\Controllers\QuizController;
 
 Route::middleware(['auth'])->group(function () {
+    // —————— Ruta de debug temporal ——————
+    Route::get('/debug-habits', function() {
+        $suggestions = \App\Models\HabitSuggestion::all();
+        $popularSuggestions = \App\Models\HabitSuggestion::popular(6);
+        
+        return response()->json([
+            'total_count' => $suggestions->count(),
+            'popular_count' => $popularSuggestions->count(),
+            'all_suggestions' => $suggestions->pluck('name'),
+            'popular_suggestions' => $popularSuggestions->pluck('name')
+        ]);
+    });
+
+    // —————— Componente Interactivo de Hábitos ——————
+    Route::get('/habits', [HabitController::class, 'index'])
+        ->name('habits.index');
+    Route::get('/habits/interactive', function () {
+        return view('habits.interactive');
+    })->name('habits.interactive');
+    Route::get('/habits/data', [HabitController::class, 'getData'])
+        ->name('habits.data');
+    Route::post('/habits/suggestions/{suggestion}/add', [HabitController::class, 'addSuggested'])
+        ->name('habits.add-suggested');
+
     // —————— Formulario de Hábito ——————
     Route::get('/formulario-habito', [FormularioHabitoController::class, 'show'])
         ->name('formulario_habito.show');
@@ -33,6 +57,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('habits.store');
     Route::post('/habits/{habit}/complete', [HabitController::class, 'complete'])
         ->name('habits.complete');
+    Route::post('/habits/{habit}/undo', [HabitController::class, 'undo'])
+        ->name('habits.undo');
     Route::post('/habits/create-from-suggestion', [HabitController::class, 'createFromSuggestion'])
         ->name('habits.createFromSuggestion');
     Route::get('/api/user-habits', [HabitController::class, 'getUserHabits'])
