@@ -122,10 +122,17 @@ class HabitController extends Controller
                 'xp_gained' => 20,
                 'habit' => [
                     'id' => $habit->id,
+                    'nombre' => $habit->nombre ?? $habit->name,
                     'name' => $habit->nombre ?? $habit->name,
+                    'current_day' => $habit->current_day,
+                    'duration_days' => $habit->duration_days,
                     'completed_today' => true,
                     'progress_percentage' => $habit->getProgressPercentage(),
-                    'streak' => $habit->dias_racha
+                    'remaining_days' => $habit->duration_days - $habit->current_day,
+                    'streak' => $habit->dias_racha,
+                    'dias_racha' => $habit->dias_racha,
+                    'last_completed_at' => $habit->last_completed_at?->format('Y-m-d H:i'),
+                    'is_active' => $habit->is_active
                 ],
                 'leveled_up' => $leveledUp,
                 'new_level' => $user->level,
@@ -215,6 +222,25 @@ class HabitController extends Controller
         $durationDays = $request->duration_days ?? 30;
         $startDate = now();
         
+        // Determinar el template_id basado en la categoría
+        $templateMapping = [
+            'salud' => 'ejercicio_diario',
+            'bienestar' => 'meditacion_mindfulness',
+            'aprendizaje' => 'lectura_diaria',
+            'productividad' => 'organizacion_productividad'
+        ];
+        
+        $templateId = $templateMapping[$request->categoria] ?? null;
+        $templateVersion = '1.0';
+        
+        // Si hay un template disponible, obtener la versión más reciente
+        if ($templateId) {
+            $latestTemplate = \App\Models\HabitTemplate::getLatestVersion($templateId);
+            if ($latestTemplate) {
+                $templateVersion = $latestTemplate->version;
+            }
+        }
+        
         $habit = Habit::create([
             'user_id' => auth()->id(),
             'nombre' => $request->name,
@@ -231,6 +257,9 @@ class HabitController extends Controller
             'expected_end_date' => $startDate->addDays($durationDays)->format('Y-m-d'),
             'progreso_total' => $durationDays,
             'is_active' => true,
+            'template_id' => $templateId,
+            'template_version' => $templateVersion,
+            'sync_enabled' => true,
         ]);
 
         // Dar XP por crear hábito
@@ -328,6 +357,25 @@ class HabitController extends Controller
         $durationDays = $request->duration_days ?? 30;
         $startDate = now();
         
+        // Determinar el template_id basado en la categoría
+        $templateMapping = [
+            'salud' => 'ejercicio_diario',
+            'bienestar' => 'meditacion_mindfulness',
+            'aprendizaje' => 'lectura_diaria',
+            'productividad' => 'organizacion_productividad'
+        ];
+        
+        $templateId = $templateMapping[$suggestion->categoria] ?? null;
+        $templateVersion = '1.0';
+        
+        // Si hay un template disponible, obtener la versión más reciente
+        if ($templateId) {
+            $latestTemplate = \App\Models\HabitTemplate::getLatestVersion($templateId);
+            if ($latestTemplate) {
+                $templateVersion = $latestTemplate->version;
+            }
+        }
+        
         $habit = Habit::create([
             'user_id' => auth()->id(),
             'nombre' => $suggestion->name,
@@ -343,6 +391,9 @@ class HabitController extends Controller
             'expected_end_date' => $startDate->addDays($durationDays)->format('Y-m-d'),
             'progreso_total' => $durationDays,
             'is_active' => true,
+            'template_id' => $templateId,
+            'template_version' => $templateVersion,
+            'sync_enabled' => true,
         ]);
 
         // Aumentar popularidad del hábito sugerido
@@ -502,13 +553,21 @@ class HabitController extends Controller
                                   'name' => $habit->nombre ?? $habit->name,
                                   'description' => $habit->description,
                                   'categoria' => $habit->categoria,
+                                  'current_day' => $habit->current_day,
+                                  'duration_days' => $habit->duration_days,
                                   'progress_percentage' => $habit->getProgressPercentage(),
-                                  'remaining_days' => $habit->remaining_days,
+                                  'remaining_days' => $habit->duration_days - $habit->current_day,
                                   'completed_today' => $habit->completed_today,
-                                  'can_complete' => $habit->can_complete,
+                                  'can_complete' => !$habit->completed_today && $habit->next_due_date->isToday(),
                                   'dias_racha' => $habit->dias_racha,
                                   'streak' => $habit->dias_racha,
                                   'is_completed' => $habit->completed_today,
+                                  'motivation' => $habit->motivation,
+                                  'reward' => $habit->reward,
+                                  'start_date' => $habit->start_date?->format('Y-m-d'),
+                                  'next_due_date' => $habit->next_due_date?->format('Y-m-d'),
+                                  'expected_end_date' => $habit->expected_end_date?->format('Y-m-d'),
+                                  'last_completed_at' => $habit->last_completed_at?->format('Y-m-d H:i'),
                                   'type' => 'user'
                               ];
                           });
@@ -527,5 +586,78 @@ class HabitController extends Controller
                 'completed_today' => $completedHabits->count()
             ]
         ]);
+    }
+
+    /**
+     * Actualizar un hábito existente
+     */
+    public function update(Request $request, Habit $habit)
+    {
+        // Verificar que el hábito pertenece al usuario autenticado
+        if ($habit->user_id !== auth()->id()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje',
+            'duration_days' => 'required|integer|in:21,30,60,90',
+            'motivation' => 'nullable|string|max:500',
+            'reward' => 'nullable|string|max:255'
+        ]);
+
+        try {
+            // Actualizar el hábito manteniendo el progreso actual
+            $habit->update([
+                'nombre' => $request->nombre,
+                'categoria' => $request->categoria,
+                'motivation' => $request->motivation,
+                'reward' => $request->reward,
+                'duration_days' => $request->duration_days,
+                // Recalcular la fecha de finalización estimada
+                'expected_end_date' => $habit->start_date->addDays($request->duration_days - 1)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hábito actualizado exitosamente',
+                'habit' => $habit->fresh()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error updating habit: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el hábito'
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar un hábito
+     */
+    public function destroy(Habit $habit)
+    {
+        // Verificar que el hábito pertenece al usuario autenticado
+        if ($habit->user_id !== auth()->id()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        try {
+            $habitName = $habit->nombre;
+            $habit->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Hábito '{$habitName}' eliminado exitosamente"
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error deleting habit: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar el hábito'
+            ], 500);
+        }
     }
 }

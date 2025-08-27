@@ -59,6 +59,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('habits.complete');
     Route::post('/habits/{habit}/undo', [HabitController::class, 'undo'])
         ->name('habits.undo');
+    Route::put('/habits/{habit}', [HabitController::class, 'update'])
+        ->name('habits.update');
+    Route::delete('/habits/{habit}', [HabitController::class, 'destroy'])
+        ->name('habits.destroy');
     Route::post('/habits/create-from-suggestion', [HabitController::class, 'createFromSuggestion'])
         ->name('habits.createFromSuggestion');
     Route::get('/api/user-habits', [HabitController::class, 'getUserHabits'])
