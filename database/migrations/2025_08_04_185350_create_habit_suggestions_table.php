@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description');
             $table->string('icon')->default('🎯');
-            $table->enum('categoria', ['salud', 'productividad', 'bienestar', 'aprendizaje']);
+            $table->enum('categoria', ['salud', 'productividad', 'bienestar', 'aprendizaje', 'finanzas', 'relaciones']);
             $table->integer('popularity')->default(0);
             $table->json('frequency_suggestions')->nullable(); // ["diario", "3 veces por semana", etc.]
             $table->text('benefits')->nullable();

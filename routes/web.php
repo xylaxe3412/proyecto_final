@@ -37,6 +37,8 @@ Route::middleware(['auth'])->group(function () {
     })->name('habits.interactive');
     Route::get('/habits/data', [HabitController::class, 'getData'])
         ->name('habits.data');
+    Route::get('/habits/suggestions', [HabitController::class, 'getAllSuggestions'])
+        ->name('habits.suggestions');
     Route::post('/habits/suggestions/{suggestion}/add', [HabitController::class, 'addSuggested'])
         ->name('habits.add-suggested');
 
@@ -164,5 +166,26 @@ Route::post('/login-google', function (Request $request) {
     }
 });
 */
+
+// Ruta de depuración temporal para verificar hábitos
+Route::get('/debug/habits', function() {
+    if (!auth()->check()) {
+        return response()->json(['error' => 'No autenticado']);
+    }
+    
+    $habits = \App\Models\Habit::where('user_id', auth()->id())->get();
+    return response()->json([
+        'user_id' => auth()->id(),
+        'total_habits' => $habits->count(),
+        'habits' => $habits->map(function($habit) {
+            return [
+                'id' => $habit->id,
+                'nombre' => $habit->nombre,
+                'is_active' => $habit->is_active,
+                'created_at' => $habit->created_at,
+            ];
+        })
+    ]);
+})->middleware('auth');
 
 require __DIR__.'/auth.php';

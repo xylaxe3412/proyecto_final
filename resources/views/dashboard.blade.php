@@ -150,6 +150,47 @@
             100% { background-position: 100% 0; }
         }
         
+        /* Estilos específicos para dropdowns/selects */
+        select {
+            color-scheme: dark;
+        }
+        
+        select option {
+            background-color: #1f2937 !important;
+            color: white !important;
+            padding: 8px 12px;
+        }
+        
+        select option:checked {
+            background-color: #6366f1 !important;
+            color: white !important;
+        }
+        
+        select option:hover {
+            background-color: #374151 !important;
+            color: white !important;
+        }
+        
+        /* Mejoras específicas para Safari y Chrome */
+        select::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        select::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        select::-webkit-scrollbar-thumb {
+            background: #6366f1;
+            border-radius: 4px;
+        }
+        
+        /* Para Firefox */
+        select {
+            scrollbar-width: thin;
+            scrollbar-color: #6366f1 #1f2937;
+        }
+        
         /* Grid responsivo */
         .habits-grid {
             display: grid;
@@ -239,6 +280,10 @@
                         class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all">
                     <i class="fas fa-sync-alt"></i>
                 </button>
+                <button @click="debugHabits()" 
+                        class="bg-red-500/80 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-red-500 transition-all">
+                    🐛 Debug
+                </button>
             </div>
         </div>
 
@@ -246,7 +291,7 @@
         <div class="habits-grid mb-12" x-show="userHabits.length > 0">
             <template x-for="habit in userHabits" :key="habit.id">
                 <div class="habit-card bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 cursor-pointer hover:border-motiveo-primary/50 transition-all duration-300"
-                     :class="habit.is_completed ? 'habit-completed' : 'habit-pending'"
+                     :class="(habit.today_completed || habit.status === 'completed') ? 'habit-completed' : 'habit-pending'"
                      @click="expandHabit(habit)"
                      title="Haz clic para ver detalles del hábito">
                     
@@ -337,10 +382,16 @@
                     <h3 class="text-2xl font-bold text-white mb-2">Hábitos Sugeridos</h3>
                     <p class="text-white/60">Descubre nuevos hábitos que podrían interesarte</p>
                 </div>
-                <button @click="loadSuggestions()" 
-                        class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all">
-                    <i class="fas fa-refresh mr-2"></i>Actualizar
-                </button>
+                <div class="flex space-x-3">
+                    <button @click.stop="openHabitExplorer()" 
+                            class="bg-motiveo-primary/80 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-motiveo-primary transition-all">
+                        <i class="fas fa-search mr-2"></i>Explorar Todos ({{ $totalHabits ?? 55 }})
+                    </button>
+                    <button @click="loadSuggestions()" 
+                            class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all">
+                        <i class="fas fa-refresh mr-2"></i>Actualizar
+                    </button>
+                </div>
             </div>
 
             <!-- Grid de Sugerencias -->
@@ -524,10 +575,10 @@
                                         <span class="text-white/60">días</span>
                                     </div>
                                     <button @click="completeHabit(habit)"
-                                            :disabled="habit.completed_today || !habit.can_complete"
-                                            :class="(habit.completed_today || !habit.can_complete) ? 'bg-gray-500' : 'bg-motiveo-success hover:bg-motiveo-success/80'"
+                                            :disabled="habit.today_completed || !habit.can_complete"
+                                            :class="(habit.today_completed || !habit.can_complete) ? 'bg-gray-500' : 'bg-motiveo-success hover:bg-motiveo-success/80'"
                                             class="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all">
-                                        <span x-text="habit.completed_today ? 'Completado' : 'Completar (+20 XP)'"></span>
+                                        <span x-text="habit.today_completed ? 'Completado' : 'Completar (+20 XP)'"></span>
                                     </button>
                                 </div>
                             </div>
@@ -1029,7 +1080,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-         @click.self="expandedHabit = null">
+         @click.self="closeHabitDetails()">
         
         <div x-show="expandedHabit"
              x-transition:enter="transition ease-out duration-300 transform"
@@ -1052,7 +1103,7 @@
                             <p x-text="expandedHabit?.category" class="text-motiveo-primary capitalize"></p>
                         </div>
                     </div>
-                    <button @click="expandedHabit = null" 
+                    <button @click="closeHabitDetails()" 
                             class="text-gray-400 hover:text-white transition-colors">
                         <i class="fas fa-times text-xl"></i>
                     </button>
@@ -1097,7 +1148,7 @@
                 </div>
 
                 <!-- Guía paso a paso -->
-                <div x-show="expandedHabit && !expandedHabit.is_completed">
+                <div x-show="expandedHabit && !(expandedHabit.today_completed || expandedHabit.status === 'completed')">
                     <h4 class="text-lg font-semibold text-white mb-3">🎯 Guía paso a paso</h4>
                     <div class="space-y-3">
                         <template x-for="(step, index) in getHabitSteps(expandedHabit)" :key="index">
@@ -1155,6 +1206,214 @@
         </div>
     </div>
 
+    <!-- Modal de Explorador de Hábitos -->
+    <div x-show="showHabitExplorer" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto"
+         @click.self="showHabitExplorer = false">
+
+        <div x-show="showHabitExplorer"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+             class="min-h-screen flex items-start justify-center p-4 pt-8">
+
+            <div class="bg-gradient-to-br from-motiveo-dark/95 to-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-6xl border border-white/10"
+                 @click.stop>
+                <!-- Header -->
+                <div class="flex items-center justify-between p-6 border-b border-white/10">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Explorador de Hábitos</h2>
+                        <p class="text-white/60 mt-1">Descubre más de 50 hábitos organizados por categorías</p>
+                    </div>
+                    <button @click.stop="showHabitExplorer = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Filters and Search -->
+                <div class="p-6 border-b border-white/10">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <!-- Search Bar -->
+                        <div class="flex-1">
+                            <div class="relative">
+                                <input x-model="explorerFilters.search" 
+                                       @input="searchHabits()"
+                                       @click.stop
+                                       type="text" 
+                                       placeholder="Buscar hábitos..." 
+                                       class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-motiveo-primary">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50"></i>
+                            </div>
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="md:w-48 relative">
+                            <select x-model="explorerFilters.category" 
+                                    @change="searchHabits()"
+                                    @click.stop
+                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer">
+                                <option value="all" class="bg-gray-800 text-white">🌟 Todas las categorías</option>
+                                <option value="salud" class="bg-gray-800 text-white">🏃‍♂️ Salud</option>
+                                <option value="productividad" class="bg-gray-800 text-white">⚡ Productividad</option>
+                                <option value="bienestar" class="bg-gray-800 text-white">😌 Bienestar</option>
+                                <option value="aprendizaje" class="bg-gray-800 text-white">📚 Aprendizaje</option>
+                                <option value="finanzas" class="bg-gray-800 text-white">💰 Finanzas</option>
+                                <option value="relaciones" class="bg-gray-800 text-white">❤️ Relaciones</option>
+                            </select>
+                            <!-- Custom dropdown arrow -->
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Sort Options -->
+                        <div class="md:w-48 relative">
+                            <select x-model="explorerFilters.sort" 
+                                    @change="searchHabits()"
+                                    @click.stop
+                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer">
+                                <option value="popularity" class="bg-gray-800 text-white">⭐ Más populares</option>
+                                <option value="name" class="bg-gray-800 text-white">🔤 Alfabético</option>
+                            </select>
+                            <!-- Custom dropdown arrow -->
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Category Filters -->
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <template x-for="category in explorerCategories" :key="category.key">
+                            <button @click.stop="explorerFilters.category = category.key; searchHabits()"
+                                    :class="explorerFilters.category === category.key ? 'bg-motiveo-primary text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+                                    class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                                    x-text="category.label">
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="p-6 max-h-96 overflow-y-auto">
+                    <!-- Loading State -->
+                    <div x-show="explorerLoading" class="text-center py-8">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-motiveo-primary"></div>
+                        <p class="text-white/60 mt-2">Cargando hábitos...</p>
+                    </div>
+
+                    <!-- Results Count -->
+                    <div x-show="!explorerLoading && explorerHabits.length > 0" class="mb-4">
+                        <p class="text-white/70 text-sm">
+                            <span x-text="explorerHabits.length"></span> hábitos encontrados
+                        </p>
+                    </div>
+
+                    <!-- Habits Grid -->
+                    <div x-show="!explorerLoading && explorerHabits.length > 0" 
+                         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <template x-for="habit in explorerHabits" :key="habit.id">
+                            <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all group">
+                                <!-- Habit Header -->
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="text-2xl" x-text="habit.icon || getCategoryIcon(habit.categoria)"></div>
+                                        <div>
+                                            <h3 class="text-white font-semibold text-sm line-clamp-1" x-text="habit.name"></h3>
+                                            <span class="text-xs px-2 py-1 rounded-full capitalize"
+                                                  :class="getCategoryStyle(habit.categoria)"
+                                                  x-text="habit.categoria">
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-white/50">
+                                        ❤️ <span x-text="habit.popularity"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <p class="text-white/70 text-xs mb-3 line-clamp-2" x-text="habit.description"></p>
+
+                                <!-- Benefits -->
+                                <div x-show="habit.benefits" class="mb-3">
+                                    <p class="text-white/60 text-xs">
+                                        <span class="text-motiveo-success">✨ Beneficios:</span>
+                                        <span class="line-clamp-1" x-text="habit.benefits"></span>
+                                    </p>
+                                </div>
+
+                                <!-- Steps Preview -->
+                                <div x-show="habit.steps && habit.steps.length > 0" class="mb-3">
+                                    <p class="text-white/60 text-xs mb-1">
+                                        <span class="text-motiveo-accent">📋 Pasos:</span>
+                                    </p>
+                                    <ul class="text-xs text-white/50 space-y-1">
+                                        <template x-for="(step, index) in habit.steps.slice(0, 2)" :key="index">
+                                            <li class="flex items-start space-x-2">
+                                                <span class="text-motiveo-accent mt-0.5">•</span>
+                                                <span class="line-clamp-1" x-text="step"></span>
+                                            </li>
+                                        </template>
+                                        <li x-show="habit.steps.length > 2" class="text-motiveo-primary text-xs">
+                                            +<span x-text="habit.steps.length - 2"></span> pasos más...
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex space-x-2 mt-3">
+                                    <button @click.stop="adoptSuggestionFromExplorer(habit)"
+                                            class="flex-1 bg-motiveo-primary/20 hover:bg-motiveo-primary text-motiveo-primary hover:text-white py-2 px-3 rounded-lg text-xs font-medium transition-all group-hover:bg-motiveo-primary group-hover:text-white">
+                                        <i class="fas fa-plus mr-1"></i>Agregar Hábito
+                                    </button>
+                                    <button @click.stop="showHabitDetails(habit)"
+                                            class="bg-white/10 hover:bg-white/20 text-white py-2 px-3 rounded-lg text-xs font-medium transition-all">
+                                        <i class="fas fa-eye mr-1"></i>Ver
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- No Results -->
+                    <div x-show="!explorerLoading && explorerHabits.length === 0" class="text-center py-8">
+                        <div class="text-6xl mb-4">🔍</div>
+                        <h3 class="text-white font-semibold mb-2">No se encontraron hábitos</h3>
+                        <p class="text-white/60 text-sm">
+                            Intenta cambiar los filtros o términos de búsqueda.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="p-6 border-t border-white/10 bg-white/5">
+                    <div class="flex justify-between items-center">
+                        <p class="text-white/60 text-sm">
+                            💡 Explora diferentes categorías para encontrar hábitos que se adapten a tus objetivos
+                        </p>
+                        <button @click.stop="showHabitExplorer = false"
+                                class="bg-motiveo-primary hover:bg-motiveo-primary/80 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script>
@@ -1199,6 +1458,26 @@
                     message: ''
                 },
                 expandedHabit: null,
+                fromExplorer: false, // Para recordar si se vino del explorador
+                
+                // Habit Explorer
+                showHabitExplorer: false,
+                explorerHabits: [],
+                explorerLoading: false,
+                explorerFilters: {
+                    search: '',
+                    category: 'all',
+                    sort: 'popularity'
+                },
+                explorerCategories: [
+                    { key: 'all', label: '🌟 Todos' },
+                    { key: 'salud', label: '🏃‍♂️ Salud' },
+                    { key: 'productividad', label: '⚡ Productividad' },
+                    { key: 'bienestar', label: '😌 Bienestar' },
+                    { key: 'aprendizaje', label: '📚 Aprendizaje' },
+                    { key: 'finanzas', label: '💰 Finanzas' },
+                    { key: 'relaciones', label: '❤️ Relaciones' }
+                ],
 
                 init() {
                     this.loadUserHabits();
@@ -1212,8 +1491,15 @@
 
                 async loadUserHabits() {
                     try {
+                        console.log('🔄 Cargando hábitos del usuario...');
                         const response = await fetch('/api/user-habits');
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
                         const data = await response.json();
+                        console.log('📥 Datos recibidos:', data);
                         
                         this.activeHabits = data.active_habits || [];
                         this.completedHabits = data.completed_today || [];
@@ -1221,13 +1507,31 @@
                         this.totalHabits = this.userHabits.length;
                         this.userStats = data.user_stats;
                         
+                        console.log('✅ Hábitos cargados:', {
+                            activos: this.activeHabits.length,
+                            completados: this.completedHabits.length,
+                            total: this.userHabits.length
+                        });
+                        
                         // Auto-mostrar sugerencias si no hay hábitos
                         if (this.userHabits.length === 0) {
                             this.showSuggestions = true;
                         }
                     } catch (error) {
-                        console.error('Error loading habits:', error);
+                        console.error('❌ Error loading habits:', error);
+                        this.showNotification('❌ Error al cargar los hábitos');
                     }
+                },
+
+                reorganizeHabits() {
+                    // Separar hábitos completados y pendientes
+                    const completedToday = this.userHabits.filter(h => h.today_completed || h.status === 'completed');
+                    const pending = this.userHabits.filter(h => !h.today_completed && h.status !== 'completed');
+                    
+                    // Reorganizar: pendientes primero, completados al final
+                    this.userHabits = [...pending, ...completedToday];
+                    this.activeHabits = pending;
+                    this.completedHabits = completedToday;
                 },
 
                 async loadSuggestions() {
@@ -1241,6 +1545,20 @@
 
                 async completeHabit(habit) {
                     try {
+                        // Actualizar el estado local inmediatamente para feedback visual
+                        const habitIndex = this.userHabits.findIndex(h => h.id === habit.id);
+                        if (habitIndex !== -1) {
+                            this.userHabits[habitIndex].today_completed = true;
+                            this.userHabits[habitIndex].status = 'completed';
+                        }
+                        
+                        // Actualizar también en activeHabits si existe
+                        const activeIndex = this.activeHabits.findIndex(h => h.id === habit.id);
+                        if (activeIndex !== -1) {
+                            this.activeHabits[activeIndex].today_completed = true;
+                            this.activeHabits[activeIndex].status = 'completed';
+                        }
+
                         const response = await fetch(`/habits/${habit.id}/complete`, {
                             method: 'POST',
                             headers: {
@@ -1253,6 +1571,16 @@
                         
                         if (data.success) {
                             this.showNotification(data.message);
+                            
+                            // Actualizar el hábito específico con datos del servidor si están disponibles
+                            if (data.habit) {
+                                if (habitIndex !== -1) {
+                                    this.userHabits[habitIndex] = { ...this.userHabits[habitIndex], ...data.habit };
+                                }
+                                if (activeIndex !== -1) {
+                                    this.activeHabits[activeIndex] = { ...this.activeHabits[activeIndex], ...data.habit };
+                                }
+                            }
                             
                             // Actualizar stats del usuario si están en la respuesta
                             if (data.user_stats) {
@@ -1267,12 +1595,35 @@
                                 }, 500);
                             }
                             
-                            this.loadUserHabits(); // Recargar hábitos
+                            // Reordenar hábitos para mover completados al final
+                            this.reorganizeHabits();
+                            
                         } else {
+                            // Si falló, revertir el cambio local
+                            if (habitIndex !== -1) {
+                                this.userHabits[habitIndex].today_completed = false;
+                                this.userHabits[habitIndex].status = 'active';
+                            }
+                            if (activeIndex !== -1) {
+                                this.activeHabits[activeIndex].today_completed = false;
+                                this.activeHabits[activeIndex].status = 'active';
+                            }
                             this.showNotification(data.message);
                         }
                     } catch (error) {
                         console.error('Error completing habit:', error);
+                        // Revertir cambios en caso de error
+                        const habitIndex = this.userHabits.findIndex(h => h.id === habit.id);
+                        if (habitIndex !== -1) {
+                            this.userHabits[habitIndex].today_completed = false;
+                            this.userHabits[habitIndex].status = 'active';
+                        }
+                        const activeIndex = this.activeHabits.findIndex(h => h.id === habit.id);
+                        if (activeIndex !== -1) {
+                            this.activeHabits[activeIndex].today_completed = false;
+                            this.activeHabits[activeIndex].status = 'active';
+                        }
+                        this.showNotification('Error al completar el hábito. Inténtalo de nuevo.');
                     }
                 },
 
@@ -1513,7 +1864,9 @@
                         'salud': '🏥',
                         'productividad': '🏢', 
                         'bienestar': '😊',
-                        'aprendizaje': '📚'
+                        'aprendizaje': '📚',
+                        'finanzas': '💰',
+                        'relaciones': '❤️'
                     };
                     return icons[categoria] || '🎯';
                 },
@@ -1655,8 +2008,8 @@
                 },
 
                 showEditHabit(habit) {
-                    // Cerrar el modal expandido
-                    this.expandedHabit = null;
+                    // Cerrar el modal expandido usando la función apropiada
+                    this.closeHabitDetails();
                     
                     // Llenar el formulario de edición con los datos del hábito
                     this.editForm = {
@@ -1724,7 +2077,7 @@
 
                         if (data.success) {
                             this.showNotification('🗑️ Hábito eliminado exitosamente');
-                            this.expandedHabit = null; // Cerrar modal expandido si está abierto
+                            this.closeHabitDetails(); // Cerrar modal expandido si está abierto
                             await this.loadUserHabits(); // Recargar hábitos
                         } else {
                             this.showNotification('❌ Error al eliminar el hábito');
@@ -1735,12 +2088,136 @@
                     }
                 },
 
+                // Habit Explorer Methods
+                async openHabitExplorer() {
+                    console.log('Opening habit explorer...');
+                    this.showHabitExplorer = true;
+                    await this.loadAllHabits();
+                },
+
+                async loadAllHabits() {
+                    console.log('Loading all habits...');
+                    this.explorerLoading = true;
+                    try {
+                        const params = new URLSearchParams({
+                            search: this.explorerFilters.search,
+                            category: this.explorerFilters.category,
+                            sort: this.explorerFilters.sort
+                        });
+
+                        console.log('Fetching:', `/habits/suggestions?${params}`);
+                        const response = await fetch(`/habits/suggestions?${params}`);
+                        const data = await response.json();
+                        
+                        console.log('Response data:', data);
+                        this.explorerHabits = data.suggestions || [];
+                        console.log('Explorer habits loaded:', this.explorerHabits.length);
+                    } catch (error) {
+                        console.error('Error loading all habits:', error);
+                        this.showNotification('❌ Error al cargar los hábitos');
+                    } finally {
+                        this.explorerLoading = false;
+                    }
+                },
+
+                async searchHabits() {
+                    await this.loadAllHabits();
+                },
+
+                async adoptSuggestionFromExplorer(habit) {
+                    try {
+                        console.log('🔄 Adoptando hábito:', habit);
+                        this.isAdopting = true;
+                        
+                        const response = await fetch(`/habits/suggestions/${habit.id}/add`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+
+                        const data = await response.json();
+                        console.log('📥 Respuesta del servidor:', data);
+                        
+                        if (data.success) {
+                            this.showNotification(`✅ ${habit.name} agregado a Mis Hábitos!`);
+                            
+                            // Celebration
+                            this.launchConfetti();
+                            
+                            // Pequeño delay para asegurar que la DB se actualice
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            
+                            // Update UI - con logs de depuración
+                            console.log('🔄 Recargando hábitos del usuario...');
+                            await this.loadUserHabits();
+                            console.log('✅ Hábitos del usuario recargados. Total:', this.userHabits.length);
+                            
+                            await this.loadSuggestions();
+                            
+                            // Optionally close explorer after adoption
+                            // this.showHabitExplorer = false;
+                        } else {
+                            console.error('❌ Error en la respuesta:', data);
+                            this.showNotification(data.message || '❌ Error al agregar el hábito');
+                        }
+                    } catch (error) {
+                        console.error('Error adopting habit from explorer:', error);
+                        this.showNotification('❌ Error al agregar el hábito');
+                    } finally {
+                        this.isAdopting = false;
+                    }
+                },
+
+                showHabitDetails(habit) {
+                    // Recordar que venimos del explorador
+                    this.fromExplorer = this.showHabitExplorer;
+                    
+                    // Cerrar el explorador de hábitos
+                    this.showHabitExplorer = false;
+                    
+                    // Show detailed view of habit in a modal or expanded view
+                    this.expandedHabit = {
+                        ...habit,
+                        is_completed: false,
+                        current_streak: 0,
+                        best_streak: 0,
+                        type: 'suggested'
+                    };
+                },
+
+                closeHabitDetails() {
+                    this.expandedHabit = null;
+                    
+                    // Si veníamos del explorador, reabrirlo
+                    if (this.fromExplorer) {
+                        this.showHabitExplorer = true;
+                        this.fromExplorer = false; // Reset para futuras aperturas
+                    }
+                },
+
+                async debugHabits() {
+                    try {
+                        console.log('🐛 Depurando hábitos...');
+                        const response = await fetch('/debug/habits');
+                        const data = await response.json();
+                        console.log('🐛 Datos de depuración:', data);
+                        this.showNotification(`🐛 Debug: ${data.total_habits} hábitos encontrados`);
+                    } catch (error) {
+                        console.error('❌ Error en debug:', error);
+                        this.showNotification('❌ Error en debug');
+                    }
+                },
+
                 getCategoryStyle(categoria) {
                     const styles = {
                         'salud': 'bg-red-500/20',
                         'productividad': 'bg-blue-500/20',
                         'bienestar': 'bg-purple-500/20',
-                        'aprendizaje': 'bg-yellow-500/20'
+                        'aprendizaje': 'bg-yellow-500/20',
+                        'finanzas': 'bg-green-500/20',
+                        'relaciones': 'bg-pink-500/20'
                     };
                     return styles[categoria] || 'bg-gray-500/20';
                 }

@@ -13,11 +13,13 @@ class HabitSuggestion extends Model
         'categoria',
         'popularity',
         'frequency_suggestions',
-        'benefits'
+        'benefits',
+        'steps'
     ];
 
     protected $casts = [
         'frequency_suggestions' => 'array',
+        'steps' => 'array',
     ];
 
     /**

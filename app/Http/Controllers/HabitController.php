@@ -127,6 +127,8 @@ class HabitController extends Controller
                     'current_day' => $habit->current_day,
                     'duration_days' => $habit->duration_days,
                     'completed_today' => true,
+                    'today_completed' => true, // Agregar para consistencia frontend
+                    'status' => 'completed',
                     'progress_percentage' => $habit->getProgressPercentage(),
                     'remaining_days' => $habit->duration_days - $habit->current_day,
                     'streak' => $habit->dias_racha,
@@ -211,7 +213,7 @@ class HabitController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'frequency' => 'required|in:diario,semanal',
-            'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje',
+            'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje,finanzas',
             'motivation' => 'required|string',
             'reward' => 'nullable|string',
             'duration_days' => 'nullable|integer|min:1|max:365'
@@ -227,7 +229,8 @@ class HabitController extends Controller
             'salud' => 'ejercicio_diario',
             'bienestar' => 'meditacion_mindfulness',
             'aprendizaje' => 'lectura_diaria',
-            'productividad' => 'organizacion_productividad'
+            'productividad' => 'organizacion_productividad',
+            'finanzas' => 'gestion_financiera'
         ];
         
         $templateId = $templateMapping[$request->categoria] ?? null;
@@ -362,7 +365,8 @@ class HabitController extends Controller
             'salud' => 'ejercicio_diario',
             'bienestar' => 'meditacion_mindfulness',
             'aprendizaje' => 'lectura_diaria',
-            'productividad' => 'organizacion_productividad'
+            'productividad' => 'organizacion_productividad',
+            'finanzas' => 'gestion_financiera'
         ];
         
         $templateId = $templateMapping[$suggestion->categoria] ?? null;
@@ -491,6 +495,13 @@ class HabitController extends Controller
                 'Paso 4: Practica lo aprendido con ejercicios o ejemplos',
                 'Paso 5: Enseña o explica el tema a alguien más',
                 'Paso 6: Revisa y repasa regularmente para fijar el conocimiento'
+            ],
+            'finanzas' => [
+                'Paso 2: Configura herramientas o aplicaciones para el seguimiento',
+                'Paso 3: Establece metas financieras específicas y realistas',
+                'Paso 4: Crea rutinas para revisar y actualizar regularmente',
+                'Paso 5: Analiza patrones y ajusta estrategias según resultados',
+                'Paso 6: Celebra metas alcanzadas y mantén disciplina a largo plazo'
             ]
         ];
 
@@ -526,7 +537,9 @@ class HabitController extends Controller
             'salud' => HabitSuggestion::byCategory('salud', 3),
             'productividad' => HabitSuggestion::byCategory('productividad', 3),
             'bienestar' => HabitSuggestion::byCategory('bienestar', 3),
-            'aprendizaje' => HabitSuggestion::byCategory('aprendizaje', 3)
+            'aprendizaje' => HabitSuggestion::byCategory('aprendizaje', 3),
+            'finanzas' => HabitSuggestion::byCategory('finanzas', 3),
+            'relaciones' => HabitSuggestion::byCategory('relaciones', 3)
         ];
 
         return response()->json([
@@ -558,6 +571,8 @@ class HabitController extends Controller
                                   'progress_percentage' => $habit->getProgressPercentage(),
                                   'remaining_days' => $habit->duration_days - $habit->current_day,
                                   'completed_today' => $habit->completed_today,
+                                  'today_completed' => $habit->completed_today, // Consistencia frontend
+                                  'status' => $habit->completed_today ? 'completed' : 'active',
                                   'can_complete' => !$habit->completed_today && $habit->next_due_date->isToday(),
                                   'dias_racha' => $habit->dias_racha,
                                   'streak' => $habit->dias_racha,
@@ -572,8 +587,8 @@ class HabitController extends Controller
                               ];
                           });
 
-        $activeHabits = $userHabits->where('completed_today', false);
-        $completedHabits = $userHabits->where('completed_today', true);
+        $activeHabits = $userHabits->where('today_completed', false);
+        $completedHabits = $userHabits->where('today_completed', true);
 
         return response()->json([
             'active_habits' => $activeHabits->values(),
@@ -600,7 +615,7 @@ class HabitController extends Controller
 
         $request->validate([
             'nombre' => 'required|string|max:255',
-            'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje',
+            'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje,finanzas',
             'duration_days' => 'required|integer|in:21,30,60,90',
             'motivation' => 'nullable|string|max:500',
             'reward' => 'nullable|string|max:255'
@@ -659,5 +674,59 @@ class HabitController extends Controller
                 'message' => 'Error al eliminar el hábito'
             ], 500);
         }
+    }
+
+    /**
+     * Get all habit suggestions with filtering
+     */
+    public function getAllSuggestions(Request $request)
+    {
+        $query = HabitSuggestion::query();
+        
+        // Filter by category
+        if ($request->has('category') && $request->category !== 'all') {
+            $query->where('categoria', $request->category);
+        }
+        
+        // Search by name or description
+        if ($request->has('search') && !empty($request->search)) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
+        }
+        
+        // Sort by popularity or name
+        $sortBy = $request->get('sort', 'popularity');
+        if ($sortBy === 'popularity') {
+            $query->orderBy('popularity', 'desc');
+        } elseif ($sortBy === 'name') {
+            $query->orderBy('name', 'asc');
+        }
+        
+        $suggestions = $query->get()->map(function($suggestion) {
+            return [
+                'id' => $suggestion->id,
+                'name' => $suggestion->name,
+                'description' => $suggestion->description,
+                'categoria' => $suggestion->categoria,
+                'icon' => $suggestion->icon,
+                'benefits' => $suggestion->benefits,
+                'steps' => $suggestion->steps ?? [],
+                'popularity' => $suggestion->popularity,
+                'frequency_suggestions' => $suggestion->frequency_suggestions ?? [],
+                'type' => 'suggested'
+            ];
+        });
+        
+        // Group by category
+        $groupedSuggestions = $suggestions->groupBy('categoria');
+        
+        return response()->json([
+            'suggestions' => $suggestions,
+            'by_category' => $groupedSuggestions,
+            'categories' => ['salud', 'productividad', 'bienestar', 'aprendizaje', 'finanzas', 'relaciones'],
+            'total' => $suggestions->count()
+        ]);
     }
 }
