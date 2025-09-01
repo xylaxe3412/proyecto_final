@@ -10,6 +10,7 @@ use App\Models\User;
 use Kreait\Firebase\Auth as FirebaseAuth;
 use Kreait\Firebase\Factory;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use App\Http\Controllers\FormularioHabitoController;
 use App\Http\Controllers\PreguntasFormController;
 use App\Http\Controllers\HabitController;
@@ -103,37 +104,72 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Comentadas las rutas de Google ya que el registro es sin Google
-/*
-// Redirigir a Google
+// Google OAuth routes
 Route::get('/auth/google', function () {
-    return Socialite::driver('google')->redirect();
-})->name('google.login');
+    try {
+        // Verificar que las credenciales de Google estén configuradas
+        if (!config('services.google.client_id') || !config('services.google.client_secret')) {
+            return redirect()->route('login')->with('error', 'Las credenciales de Google no están configuradas correctamente.');
+        }
+        
+        $driver = Socialite::driver('google');
+        $driver->scopes(['profile', 'email']);
+        $redirectUrl = $driver->redirect();
+        
+        return $redirectUrl;
+    } catch (Exception $e) {
+        \Log::error('Error en Google OAuth redirect: ' . $e->getMessage());
+        return redirect()->route('login')->with('error', 'Error al conectar con Google. Por favor, intenta de nuevo.');
+    }
+})->name('auth.google');
 
-// Callback
 Route::get('/auth/google/callback', function () {
     try {
-        $googleUser = Socialite::driver('google')->stateless()->user();
-
-        // Buscar o registrar usuario
-        $user = \App\Models\User::firstOrCreate(
-            ['email' => $googleUser->getEmail()],
-            [
-                'name' => $googleUser->getName(),
+        $googleUser = Socialite::driver('google')->user();
+        
+        // Validar que recibimos los datos necesarios
+        if (!$googleUser->getEmail()) {
+            return redirect()->route('login')->with('error', 'No se pudo obtener el email de Google.');
+        }
+        
+        // Buscar usuario existente por email
+        $user = User::where('email', $googleUser->getEmail())->first();
+        
+        if ($user) {
+            // Usuario existente - actualizar información de Google
+            $user->update([
                 'google_id' => $googleUser->getId(),
                 'avatar' => $googleUser->getAvatar(),
-                'email_verified_at' => now(), // opcional
-                'password' => bcrypt(uniqid()) // para cumplir con campo requerido
-            ]
-        );
-
+                'email_verified_at' => $user->email_verified_at ?: now(),
+            ]);
+            
+            \Log::info('Usuario existente autenticado con Google: ' . $user->email);
+        } else {
+            // Crear nuevo usuario
+            $user = User::create([
+                'name' => $googleUser->getName() ?: 'Usuario Google',
+                'email' => $googleUser->getEmail(),
+                'google_id' => $googleUser->getId(),
+                'avatar' => $googleUser->getAvatar(),
+                'email_verified_at' => now(),
+                'password' => bcrypt(Str::random(24)), // Password temporal para usuarios de Google
+                'xp' => 0,
+                'level' => 1,
+            ]);
+            
+            \Log::info('Nuevo usuario creado con Google: ' . $user->email);
+        }
+        
+        // Autenticar usuario
         Auth::login($user);
-        return redirect('/dashboard'); // o página de bienvenida
-
-    } catch (\Exception $e) {
-        return redirect('/')->with('error', 'Error al autenticar con Google.');
+        
+        return redirect()->route('dashboard')->with('success', '¡Bienvenido! Has iniciado sesión con Google exitosamente.');
+        
+    } catch (Exception $e) {
+        \Log::error('Error en Google OAuth callback: ' . $e->getMessage());
+        return redirect()->route('login')->with('error', 'Error en autenticación con Google. Por favor, intenta de nuevo.');
     }
-});
+})->name('auth.google.callback');
 
 #firebase
 Route::post('/login-google', function (Request $request) {
@@ -165,7 +201,6 @@ Route::post('/login-google', function (Request $request) {
         return response()->json(['error' => 'Token inválido: ' . $e->getMessage()], 401);
     }
 });
-*/
 
 // Ruta de depuración temporal para verificar hábitos
 Route::get('/debug/habits', function() {

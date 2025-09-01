@@ -26,6 +26,9 @@ class User extends Authenticatable
         'xp',
         'level',
         'last_login_xp',
+        'google_id',
+        'avatar',
+        'email_verified_at',
     ];
 
     /**
