@@ -18,7 +18,7 @@ class HabitSuggestionsSeederExtended extends Seeder
             [
                 'name' => 'Ejercicio matutino',
                 'description' => 'Hacer ejercicio todas las mañanas para mantenerme en forma y energizado',
-                'icon' => '🏃‍♂️',
+                'icon' => '<i class="fas fa-running text-red-500"></i>',
                 'categoria' => 'salud',
                 'popularity' => 190,
                 'frequency_suggestions' => ['diario', '5 veces por semana'],
@@ -36,7 +36,7 @@ class HabitSuggestionsSeederExtended extends Seeder
             [
                 'name' => 'Beber 8 vasos de agua',
                 'description' => 'Mantener una hidratación óptima bebiendo suficiente agua durante el día',
-                'icon' => '💧',
+                'icon' => '<i class="fas fa-tint text-blue-500"></i>',
                 'categoria' => 'salud',
                 'popularity' => 200,
                 'frequency_suggestions' => ['diario'],
@@ -54,7 +54,7 @@ class HabitSuggestionsSeederExtended extends Seeder
             [
                 'name' => 'Dormir 8 horas',
                 'description' => 'Establecer un horario de sueño regular para una recuperación óptima',
-                'icon' => '😴',
+                'icon' => '<i class="fas fa-bed text-red-500"></i>',
                 'categoria' => 'salud',
                 'popularity' => 180,
                 'frequency_suggestions' => ['diario'],

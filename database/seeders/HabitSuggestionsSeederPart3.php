@@ -14,7 +14,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Comer 5 porciones de frutas y verduras',
                 'description' => 'Consumir al menos 5 porciones de frutas y verduras frescas diariamente',
-                'icon' => '🥬',
+                'icon' => '<i class="fas fa-leaf text-green-500"></i>',
                 'categoria' => 'salud',
                 'popularity' => 115,
                 'frequency_suggestions' => ['diario'],
@@ -30,7 +30,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Tomar vitaminas diarias',
                 'description' => 'Consumir suplementos vitamínicos esenciales según necesidades personales',
-                'icon' => '💊',
+                'icon' => '<i class="fas fa-pills text-red-500"></i>',
                 'categoria' => 'salud',
                 'popularity' => 90,
                 'frequency_suggestions' => ['diario'],
@@ -46,7 +46,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Hacer ejercicios de respiración',
                 'description' => 'Practicar técnicas de respiración profunda por 5-10 minutos diarios',
-                'icon' => '🫁',
+                'icon' => '<i class="fas fa-lungs text-red-500"></i>',
                 'categoria' => 'salud',
                 'popularity' => 85,
                 'frequency_suggestions' => ['diario'],
@@ -64,7 +64,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Batch similar tasks',
                 'description' => 'Agrupar tareas similares y realizarlas en bloques de tiempo dedicados',
-                'icon' => '📦',
+                'icon' => '<i class="fas fa-boxes text-blue-500"></i>',
                 'categoria' => 'productividad',
                 'popularity' => 80,
                 'frequency_suggestions' => ['diario'],
@@ -80,7 +80,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Review semanal de objetivos',
                 'description' => 'Dedicar tiempo cada semana a revisar progreso y ajustar objetivos',
-                'icon' => '📊',
+                'icon' => '<i class="fas fa-chart-line text-blue-500"></i>',
                 'categoria' => 'productividad',
                 'popularity' => 95,
                 'frequency_suggestions' => ['semanal'],
@@ -98,7 +98,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Practicar mindfulness',
                 'description' => 'Dedicar 10 minutos diarios a práctica de atención plena y meditación',
-                'icon' => '🧘',
+                'icon' => '<i class="fas fa-om text-yellow-500"></i>',
                 'categoria' => 'bienestar',
                 'popularity' => 120,
                 'frequency_suggestions' => ['diario'],
@@ -114,7 +114,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Escuchar música relajante',
                 'description' => 'Incorporar música calmante en rutina diaria para reducir estrés',
-                'icon' => '🎵',
+                'icon' => '<i class="fas fa-music text-yellow-500"></i>',
                 'categoria' => 'bienestar',
                 'popularity' => 85,
                 'frequency_suggestions' => ['diario'],
@@ -132,7 +132,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Comparar precios antes de comprar',
                 'description' => 'Investigar precios en múltiples lugares antes de realizar compras importantes',
-                'icon' => '🛒',
+                'icon' => '<i class="fas fa-shopping-cart text-green-600"></i>',
                 'categoria' => 'finanzas',
                 'popularity' => 90,
                 'frequency_suggestions' => ['cuando sea necesario'],
@@ -148,7 +148,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Leer sobre finanzas personales',
                 'description' => 'Dedicar tiempo semanal a educación financiera a través de libros, blogs o cursos',
-                'icon' => '📚',
+                'icon' => '<i class="fas fa-book-open text-green-600"></i>',
                 'categoria' => 'finanzas',
                 'popularity' => 75,
                 'frequency_suggestions' => ['semanal'],
@@ -166,7 +166,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Dar cumplidos genuinos',
                 'description' => 'Ofrecer al menos un cumplido sincero diario a diferentes personas',
-                'icon' => '💝',
+                'icon' => '<i class="fas fa-gift text-pink-500"></i>',
                 'categoria' => 'relaciones',
                 'popularity' => 85,
                 'frequency_suggestions' => ['diario'],
@@ -182,7 +182,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Organizar encuentros sociales',
                 'description' => 'Planificar y organizar actividades sociales regulares con amigos y familia',
-                'icon' => '🎉',
+                'icon' => '<i class="fas fa-users text-pink-500"></i>',
                 'categoria' => 'relaciones',
                 'popularity' => 70,
                 'frequency_suggestions' => ['mensual'],
@@ -200,7 +200,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Leer artículos de industria',
                 'description' => 'Mantenerse actualizado leyendo artículos relevantes del campo profesional',
-                'icon' => '📰',
+                'icon' => '<i class="fas fa-newspaper text-green-500"></i>',
                 'categoria' => 'aprendizaje',
                 'popularity' => 80,
                 'frequency_suggestions' => ['diario'],
@@ -216,7 +216,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Enseñar lo aprendido',
                 'description' => 'Compartir conocimientos con otros para reforzar el propio aprendizaje',
-                'icon' => '👨‍🏫',
+                'icon' => '<i class="fas fa-chalkboard-teacher text-green-500"></i>',
                 'categoria' => 'aprendizaje',
                 'popularity' => 75,
                 'frequency_suggestions' => ['semanal'],

@@ -30,8 +30,18 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Canvas Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <!-- Lottie Animation Library -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     
     <style>
+        /* Fondo global con degradado morado */
+        html, body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #4c1d95 50%, #6b21a8 75%, #8b5cf6 100%);
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        
         /* Estilos para las tarjetas de hábitos */
         .habit-card {
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -195,7 +205,7 @@
         .habits-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
+            gap: 2rem;
         }
         
         @media (max-width: 768px) {
@@ -205,32 +215,42 @@
         }
     </style>
 </head>
-<body class="h-full bg-gradient-to-br from-motiveo-dark via-purple-900 to-indigo-900 font-display" x-data="habitApp()">
+<body class="min-h-screen bg-gradient-to-br from-slate-900 to-purple-600 font-display overflow-x-hidden" x-data="habitApp()" 
+      x-init="$nextTick(() => { document.body.classList.add('loaded') })"
+      style="opacity: 0; transform: translateY(20px); transition: all 0.6s ease;"
+      x-transition:enter="transition ease-out duration-1000"
+      x-transition:enter-start="opacity-0 transform translate-y-8"
+      x-transition:enter-end="opacity-100 transform translate-y-0">
     <!-- Header -->
-    <div class="bg-white/10 backdrop-blur-md border-b border-white/20">
+    <div class="bg-white/10 backdrop-blur-md border-b border-white/20 animate-slide-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <!-- Logo -->
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-r from-motiveo-primary to-motiveo-secondary rounded-xl flex items-center justify-center shadow-lg">
+                <div class="flex items-center space-x-3 animate-bounce-subtle">
+                    <div class="w-10 h-10 bg-gradient-to-r from-motiveo-primary to-motiveo-secondary rounded-xl flex items-center justify-center shadow-lg 
+                                transform hover:scale-110 hover:rotate-6 transition-all duration-300 hover:shadow-2xl animate-pulse-glow">
                         <span class="text-lg font-black text-white">M</span>
                     </div>
-                    <h1 class="text-2xl font-bold text-white">MOTIVEO</h1>
+                    <h1 class="text-2xl font-bold text-white hover:text-motiveo-accent transition-colors duration-300 animate-text-glow">MOTIVEO</h1>
                 </div>
 
                 <!-- User Level & XP -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-4 animate-fade-in-right">
                     <div class="hidden sm:flex items-center space-x-3">
-                        <div class="bg-motiveo-warning text-white px-3 py-1 rounded-full text-sm font-bold" x-text="`NIVEL ${userStats.level}`">
+                        <div class="bg-motiveo-warning text-white px-3 py-1 rounded-full text-sm font-bold 
+                                    hover:scale-105 hover:bg-motiveo-warning/80 transition-all duration-300 animate-wiggle-on-hover" 
+                             x-text="`NIVEL ${userStats.level}`"
+                             @mouseenter="$el.classList.add('animate-wiggle')"
+                             @mouseleave="$el.classList.remove('animate-wiggle')">
                             NIVEL {{ auth()->user()->level ?? 1 }}
                         </div>
                         <div class="flex items-center space-x-2">
                             <div class="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-motiveo-success to-emerald-400 rounded-full transition-all duration-500" 
+                                <div class="h-full bg-gradient-to-r from-motiveo-success to-emerald-400 rounded-full transition-all duration-1000 animate-progress-fill" 
                                      :style="`width: ${userStats.progress}%`"
                                      style="width: {{ auth()->user()->getLevelProgress() ?? 0 }}%"></div>
                             </div>
-                            <span class="text-white text-sm" x-text="`${userStats.xp}/${userStats.next_level_xp} XP`">
+                            <span class="text-white text-sm animate-number-count" x-text="`${userStats.xp}/${userStats.next_level_xp} XP`">
                                 {{ auth()->user()->xp ?? 0 }}/{{ auth()->user()->getXpForNextLevel() ?? 100 }} XP
                             </span>
                         </div>
@@ -238,12 +258,14 @@
                     
                     <!-- User Menu -->
                     <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-gradient-to-r from-motiveo-pink to-red-400 rounded-full flex items-center justify-center">
+                        <div class="w-8 h-8 bg-gradient-to-r from-motiveo-pink to-red-400 rounded-full flex items-center justify-center
+                                    hover:scale-110 transition-all duration-300 hover:shadow-lg animate-float">
                             <span class="text-white text-sm font-bold">{{ substr(auth()->user()->name, 0, 1) }}</span>
                         </div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="text-white/80 hover:text-white text-sm">Salir</button>
+                            <button type="submit" class="text-white/80 hover:text-white text-sm hover:scale-105 transition-all duration-300 
+                                                         hover:bg-white/10 px-3 py-1 rounded-lg">Salir</button>
                         </form>
                     </div>
                 </div>
@@ -253,88 +275,107 @@
 
     <!-- Notifications -->
     <div x-show="notification.show" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform translate-y-2"
-         x-transition:enter-end="opacity-100 transform translate-y-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 transform translate-y-0"
-         x-transition:leave-end="opacity-0 transform translate-y-2"
-         class="fixed top-4 right-4 bg-motiveo-success text-white px-6 py-3 rounded-lg shadow-lg z-50"
+         x-transition:enter="transition ease-out duration-500 transform"
+         x-transition:enter-start="opacity-0 transform translate-y-2 scale-95 rotate-1"
+         x-transition:enter-end="opacity-100 transform translate-y-0 scale-100 rotate-0"
+         x-transition:leave="transition ease-in duration-300 transform"
+         x-transition:leave-start="opacity-100 transform translate-y-0 scale-100 rotate-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2 scale-95 rotate-1"
+         class="fixed top-4 right-4 bg-motiveo-success text-white px-6 py-3 rounded-lg shadow-2xl z-50 
+                animate-bounce-gentle border-2 border-white/20 backdrop-blur-sm"
          x-text="notification.message">
     </div>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
         <!-- Título y Filtros -->
-        <div class="flex justify-between items-center mb-8">
-            <div>
-                <h2 class="text-3xl font-bold text-white mb-2">Mis Hábitos</h2>
-                <p class="text-white/60">Gestiona tus hábitos diarios de forma organizada</p>
+        <div class="flex justify-between items-center mb-12 animate-slide-up">
+            <div class="animate-fade-in-left">
+                <h2 class="text-3xl font-bold text-white mb-2 animate-text-shine">Mis Hábitos</h2>
+                <p class="text-white/60 animate-fade-in-delayed">Gestiona tus hábitos diarios de forma organizada</p>
             </div>
-            <div class="flex space-x-3">
+            <div class="flex space-x-3 animate-fade-in-right-delayed">
                 <button @click="showCreateModal = true" 
-                        class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
-                    <i class="fas fa-plus mr-2"></i>Nuevo Hábito
+                        class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary text-white px-6 py-3 rounded-xl font-semibold 
+                               hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 
+                               animate-pulse-button group overflow-hidden relative">
+                    <span class="relative z-10 flex items-center">
+                        <i class="fas fa-plus mr-2 group-hover:rotate-90 transition-transform duration-300"></i>Nuevo Hábito
+                    </span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-motiveo-secondary to-motiveo-primary opacity-0 
+                                group-hover:opacity-100 transition-opacity duration-300"></div>
                 </button>
                 <button @click="loadUserHabits()" 
-                        class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all">
-                    <i class="fas fa-sync-alt"></i>
+                        class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all duration-300
+                               transform hover:scale-105 hover:rotate-3 animate-spin-on-hover group">
+                    <i class="fas fa-sync-alt group-hover:animate-spin"></i>
                 </button>
                 <button @click="debugHabits()" 
-                        class="bg-red-500/80 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-red-500 transition-all">
-                    🐛 Debug
+                        class="bg-red-500/80 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-red-500 transition-all duration-300
+                               transform hover:scale-105 hover:shadow-red-500/50 hover:shadow-lg animate-bug-wiggle">
+                    <i class="fas fa-bug mr-1 animate-wiggle"></i>Debug
                 </button>
             </div>
         </div>
 
         <!-- Grid de Hábitos -->
-        <div class="habits-grid mb-12" x-show="userHabits.length > 0">
-            <template x-for="habit in userHabits" :key="habit.id">
-                <div class="habit-card bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 cursor-pointer hover:border-motiveo-primary/50 transition-all duration-300"
-                     :class="(habit.today_completed || habit.status === 'completed') ? 'habit-completed' : 'habit-pending'"
+        <div class="habits-grid mb-24" x-show="userHabits.length > 0">
+            <template x-for="(habit, index) in userHabits" :key="habit.id">
+                <div class="habit-card bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 cursor-pointer 
+                           hover:border-motiveo-primary/50 transition-all duration-500 mb-6 transform hover:scale-105 
+                           hover:-translate-y-2 hover:shadow-2xl hover:shadow-motiveo-primary/20 animate-card-appear group
+                           hover:bg-white/15 animate-float-delayed"
+                     :class="(habit.today_completed || habit.status === 'completed') ? 'habit-completed animate-completed-glow' : 'habit-pending'"
                      @click="expandHabit(habit)"
-                     title="Haz clic para ver detalles del hábito">
+                     title="Haz clic para ver detalles del hábito"
+                     :style="`animation-delay: ${index * 0.1}s`"
+                     x-transition:enter="transition ease-out duration-700 transform"
+                     x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-100">
                     
                     <!-- Header de la tarjeta -->
-                    <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-start justify-between mb-6">
                         <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 rounded-xl flex items-center justify-center"
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300
+                                        group-hover:scale-110 group-hover:rotate-6 animate-icon-bounce"
                                  :class="getCategoryStyle(habit.categoria)">
-                                <span class="text-xl" x-text="getCategoryIcon(habit.categoria)"></span>
+                                <span class="text-xl" x-html="getHabitIcon(habit)"></span>
                             </div>
-                            <div>
-                                <h3 class="text-white font-bold text-lg" x-text="habit.nombre"></h3>
-                                <p class="text-white/60 text-sm capitalize" x-text="habit.categoria"></p>
+                            <div class="transform group-hover:translate-x-1 transition-transform duration-300">
+                                <h3 class="text-white font-bold text-lg group-hover:text-motiveo-accent transition-colors duration-300" 
+                                    x-text="habit.nombre"></h3>
+                                <p class="text-white/60 text-sm capitalize animate-text-shimmer" x-text="habit.categoria"></p>
                             </div>
                         </div>
                         
                         <!-- Estado visual -->
                         <div class="flex flex-col items-end">
-                            <div class="w-3 h-3 rounded-full mb-2"
-                                 :class="habit.is_completed ? 'bg-motiveo-success' : 'bg-motiveo-warning'"></div>
-                            <span class="text-xs text-white/60" 
+                            <div class="w-3 h-3 rounded-full mb-2 animate-status-pulse transition-all duration-300"
+                                 :class="habit.is_completed ? 'bg-motiveo-success animate-success-pulse' : 'bg-motiveo-warning animate-warning-pulse'"></div>
+                            <span class="text-xs text-white/60 group-hover:text-white/80 transition-colors duration-300" 
                                   x-text="habit.is_completed ? 'Completado' : 'Pendiente'"></span>
                         </div>
                     </div>
 
                     <!-- Descripción breve -->
-                    <p class="text-white/80 text-sm mb-4 line-clamp-2" x-text="habit.descripcion || 'Descripción del hábito'"></p>
+                    <p class="text-white/80 text-sm mb-6 line-clamp-2 group-hover:text-white transition-colors duration-300" 
+                       x-text="habit.descripcion || 'Descripción del hábito'"></p>
 
                     <!-- Stats -->
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center space-x-4 text-sm">
-                            <span class="text-motiveo-success flex items-center">
-                                <i class="fas fa-fire mr-1"></i>
-                                <span x-text="`${habit.dias_racha} días`"></span>
+                            <span class="text-motiveo-success flex items-center group-hover:scale-105 transition-transform duration-300">
+                                <i class="fas fa-fire mr-1 animate-fire-flicker"></i>
+                                <span x-text="`${habit.dias_racha} días`" class="animate-number-count"></span>
                             </span>
-                            <span class="text-motiveo-accent flex items-center">
-                                <i class="fas fa-star mr-1"></i>
-                                <span x-text="`${habit.xp_ganada || 0} XP`"></span>
+                            <span class="text-motiveo-accent flex items-center group-hover:scale-105 transition-transform duration-300">
+                                <i class="fas fa-star mr-1 animate-star-twinkle"></i>
+                                <span x-text="`${habit.xp_ganada || 0} XP`" class="animate-number-count"></span>
                             </span>
                         </div>
-                        <div class="flex items-center text-xs text-white/60">
-                            <i class="fas fa-calendar mr-1"></i>
-                            <span>Día <span x-text="habit.dias_activo || 1"></span></span>
+                        <div class="flex items-center text-xs text-white/60 group-hover:text-white/80 transition-colors duration-300">
+                            <i class="fas fa-calendar mr-1 animate-calendar-flip"></i>
+                            <span>Día <span x-text="habit.dias_activo || 1" class="animate-number-count"></span></span>
                         </div>
                     </div>
 
@@ -344,93 +385,133 @@
                             :class="habit.is_completed 
                                 ? 'bg-motiveo-success/20 text-motiveo-success border-motiveo-success/30 hover:bg-motiveo-warning/20 hover:text-motiveo-warning hover:border-motiveo-warning' 
                                 : 'bg-motiveo-warning/20 text-motiveo-warning border-motiveo-warning hover:bg-motiveo-warning hover:text-white'"
-                            class="w-full py-3 px-4 rounded-xl font-semibold transition-all border-2 flex items-center justify-center">
+                            class="w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 border-2 flex items-center justify-center
+                                   transform hover:scale-105 hover:-translate-y-1 hover:shadow-lg group-button overflow-hidden relative">
                         <template x-if="habit.is_completed">
-                            <div class="flex items-center">
-                                <i class="fas fa-undo mr-2"></i>
-                                Deshacer Completado
+                            <div class="flex items-center relative z-10">
+                                <i class="fas fa-undo mr-2 group-button-hover:animate-spin-reverse"></i>
+                                <span class="animate-text-typing">Deshacer Completado</span>
                             </div>
                         </template>
                         <template x-if="!habit.is_completed">
-                            <div class="flex items-center">
-                                <i class="fas fa-play mr-2"></i>
-                                Iniciar Hábito
+                            <div class="flex items-center relative z-10">
+                                <i class="fas fa-play mr-2 group-button-hover:translate-x-1 transition-transform duration-300"></i>
+                                <span class="animate-text-typing">Iniciar Hábito</span>
                             </div>
                         </template>
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent 
+                                    -translate-x-full group-button-hover:translate-x-full transition-transform duration-700"></div>
                     </button>
                 </div>
             </template>
         </div>
 
         <!-- Estado vacío -->
-        <div x-show="userHabits.length === 0" class="text-center py-16">
-            <div class="text-6xl mb-6">🎯</div>
-            <h3 class="text-2xl font-bold text-white mb-4">¡Comienza tu viaje!</h3>
-            <p class="text-white/60 mb-8 max-w-lg mx-auto">
+        <div x-show="userHabits.length === 0" 
+             x-transition:enter="transition ease-out duration-800 transform"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-8"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             class="text-center py-20 mb-24 mx-4 sm:mx-6 lg:mx-8 animate-fade-in-up">
+            <div class="text-6xl mb-6 text-motiveo-primary animate-bounce-gentle">
+                <i class="fas fa-bullseye animate-icon-bounce"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-4 animate-text-glow">¡Comienza tu viaje!</h3>
+            <p class="text-white/60 mb-8 max-w-lg mx-auto animate-text-shimmer">
                 Aún no tienes hábitos creados. Comienza creando tu primer hábito y da el primer paso hacia una mejor versión de ti mismo.
             </p>
             <button @click="showCreateModal = true" 
-                    class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
-                <i class="fas fa-rocket mr-2"></i>Crear Mi Primer Hábito
+                    class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary text-white px-8 py-3 rounded-xl font-semibold 
+                           hover:shadow-2xl transition-all duration-500 transform hover:scale-110 hover:-translate-y-2 
+                           animate-pulse-button group overflow-hidden relative">
+                <span class="relative z-10 flex items-center">
+                    <i class="fas fa-rocket mr-2 group-hover:animate-bounce"></i>Crear Mi Primer Hábito
+                </span>
+                <div class="absolute inset-0 bg-gradient-to-r from-motiveo-secondary to-motiveo-primary opacity-0 
+                            group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
         </div>
 
         <!-- Sección de Hábitos Sugeridos -->
-        <div class="mt-16">
+        <div class="mt-24 mb-8 mx-4 sm:mx-6 lg:mx-8 animate-slide-up">
             <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h3 class="text-2xl font-bold text-white mb-2">Hábitos Sugeridos</h3>
-                    <p class="text-white/60">Descubre nuevos hábitos que podrían interesarte</p>
+                <div class="animate-fade-in-left">
+                    <h3 class="text-2xl font-bold text-white mb-2 animate-text-shine">Hábitos Sugeridos</h3>
+                    <p class="text-white/60 animate-text-shimmer">Descubre nuevos hábitos que podrían interesarte</p>
                 </div>
-                <div class="flex space-x-3">
+                <div class="flex space-x-3 animate-fade-in-right-delayed">
                     <button @click.stop="openHabitExplorer()" 
-                            class="bg-motiveo-primary/80 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-motiveo-primary transition-all">
-                        <i class="fas fa-search mr-2"></i>Explorar Todos ({{ $totalHabits ?? 55 }})
+                            class="bg-motiveo-primary/80 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-motiveo-primary 
+                                   transition-all duration-300 transform hover:scale-105 hover:shadow-lg group">
+                        <i class="fas fa-search mr-2 group-hover:animate-pulse"></i>Explorar Todos ({{ $totalHabits ?? 55 }})
                     </button>
                     <button @click="loadSuggestions()" 
-                            class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 transition-all">
-                        <i class="fas fa-refresh mr-2"></i>Actualizar
+                            class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 
+                                   transition-all duration-300 transform hover:scale-105 group">
+                        <i class="fas fa-refresh mr-2 group-hover:animate-spin"></i>Actualizar
                     </button>
                 </div>
             </div>
 
             <!-- Grid de Sugerencias -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" x-show="suggestions.popular && suggestions.popular.length > 0">
-                <template x-for="suggestion in suggestions.popular" :key="suggestion.id">
-                    <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
-                         @click="adoptSuggestion(suggestion)">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16" x-show="suggestions.popular && suggestions.popular.length > 0">
+                <template x-for="(suggestion, index) in suggestions.popular" :key="suggestion.id">
+                    <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 
+                               transition-all duration-500 cursor-pointer transform hover:scale-105 hover:-translate-y-2 
+                               hover:shadow-xl hover:shadow-motiveo-primary/20 animate-card-appear group"
+                         :style="`animation-delay: ${index * 0.1}s`"
+                         @click="adoptSuggestion(suggestion)"
+                         x-transition:enter="transition ease-out duration-600 transform"
+                         x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                         x-transition:enter-end="opacity-100 translate-y-0 scale-100">
                         <div class="flex items-center space-x-3 mb-3">
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center"
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 
+                                        group-hover:rotate-6 transition-all duration-300 animate-icon-bounce"
                                  :class="getCategoryStyle(suggestion.categoria)">
-                                <span class="text-lg" x-text="getCategoryIcon(suggestion.categoria)"></span>
+                                <span class="text-lg" x-html="getCategoryIcon(suggestion.categoria)"></span>
                             </div>
-                            <div>
-                                <h4 class="text-white font-semibold text-sm" x-text="suggestion.name"></h4>
-                                <p class="text-white/60 text-xs capitalize" x-text="suggestion.categoria"></p>
+                            <div class="transform group-hover:translate-x-1 transition-transform duration-300">
+                                <h4 class="text-white font-semibold text-sm group-hover:text-motiveo-accent transition-colors duration-300" 
+                                    x-text="suggestion.name"></h4>
+                                <p class="text-white/60 text-xs capitalize animate-text-shimmer" x-text="suggestion.categoria"></p>
                             </div>
                         </div>
-                        <p class="text-white/70 text-xs mb-3 line-clamp-2" x-text="suggestion.description"></p>
-                        <button class="w-full bg-motiveo-accent/20 text-motiveo-accent py-2 px-3 rounded-lg text-xs font-medium hover:bg-motiveo-accent hover:text-white transition-all">
-                            <i class="fas fa-plus mr-1"></i>Agregar
+                        <p class="text-white/70 text-xs mb-3 line-clamp-2 group-hover:text-white transition-colors duration-300" 
+                           x-text="suggestion.description"></p>
+                        <button class="w-full bg-motiveo-accent/20 text-motiveo-accent py-2 px-3 rounded-lg text-xs font-medium 
+                                       hover:bg-motiveo-accent hover:text-white transition-all duration-300 transform hover:scale-105
+                                       group-hover:shadow-lg overflow-hidden relative">
+                            <span class="relative z-10 flex items-center justify-center">
+                                <i class="fas fa-plus mr-1 group-hover:rotate-90 transition-transform duration-300"></i>Agregar
+                            </span>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent 
+                                        -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                         </button>
                     </div>
                 </template>
             </div>
 
             <!-- Categorías de sugerencias -->
-            <div class="mt-8">
-                <h4 class="text-lg font-semibold text-white mb-4">Explorar por Categoría</h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <template x-for="[category, habits] in Object.entries(suggestions.by_category || {})" :key="category">
-                        <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
-                             @click="showCategoryDetails(category, habits)">
+            <div class="mt-16 mb-12 animate-slide-up">
+                <h4 class="text-lg font-semibold text-white mb-6 animate-text-glow">Explorar por Categoría</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <template x-for="([category, habits], index) in Object.entries(suggestions.by_category || {})" :key="category">
+                        <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 
+                                   transition-all duration-500 cursor-pointer transform hover:scale-105 hover:-translate-y-2 
+                                   hover:shadow-xl hover:shadow-motiveo-primary/20 animate-card-appear group"
+                             :style="`animation-delay: ${index * 0.1}s`"
+                             @click="showCategoryDetails(category, habits)"
+                             x-transition:enter="transition ease-out duration-600 transform"
+                             x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                             x-transition:enter-end="opacity-100 translate-y-0 scale-100">
                             <div class="text-center">
-                                <div class="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2"
+                                <div class="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2 
+                                           group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 animate-icon-bounce"
                                      :class="getCategoryStyle(category)">
-                                    <span class="text-xl" x-text="getCategoryIcon(category)"></span>
+                                    <span class="text-xl" x-html="getCategoryIcon(category)"></span>
                                 </div>
-                                <h5 class="text-white font-medium text-sm capitalize" x-text="category"></h5>
-                                <p class="text-white/60 text-xs" x-text="`${habits.length} hábitos`"></p>
+                                <h5 class="text-white font-medium text-sm capitalize group-hover:text-motiveo-accent 
+                                          transition-colors duration-300" x-text="category"></h5>
+                                <p class="text-white/60 text-xs animate-number-count" x-text="`${habits.length} hábitos`"></p>
                             </div>
                         </div>
                     </template>
@@ -438,21 +519,18 @@
             </div>
         </div>
     </div>
-                            </div>
+                             </div>
+                    
+                            <div class= "max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             <h2 class="text-xl font-bold text-white">
                                 <span x-show="userHabits.length === 0">¡Comienza tu Viaje!</span>
-                                <span x-show="userHabits.length > 0">Más Hábitos Populares</span>
                             </h2>
                         </div>
-                        <button @click="loadSuggestions()" 
-                                class="text-motiveo-accent hover:text-motiveo-accent/80 text-sm font-medium">
-                            🔄 Renovar
-                        </button>
-                    </div>
 
                     <div x-show="userHabits.length === 0" class="mb-4 p-4 bg-motiveo-primary/10 rounded-xl border border-motiveo-primary/20">
                         <div class="flex items-center space-x-2 text-motiveo-accent mb-2">
-                            <span class="text-lg">🌟</span>
+                            <i class="fas fa-star text-lg"></i>
                             <span class="font-semibold">¡Bienvenido a Motiveo!</span>
                         </div>
                         <p class="text-white/80 text-sm">
@@ -460,12 +538,15 @@
                         </p>
                     </div>
 
-                    <div class="space-y-4">
+                    <div class="lg:col-span-2">
+                    <h2 class="text-lg font-semibold text-white mb-6">    
+                    <span x-show="userHabits.length > 0">Más Hábitos Populares</span>
+                    </h2>
                         <template x-for="suggestion in suggestions.popular" :key="suggestion.id">
-                            <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 transition-all border border-white/5 hover:border-white/20">
+                            <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 transition-all border border-white/5 hover:border-white/20 mb-6">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-3 flex-1">
-                                        <div class="text-2xl" x-text="suggestion.icon"></div>
+                                        <div class="text-2xl" x-html="suggestion.icon"></div>
                                         <div class="flex-1">
                                             <h3 class="text-white font-semibold" x-text="suggestion.name"></h3>
                                             <p class="text-white/60 text-sm line-clamp-2" x-text="suggestion.description"></p>
@@ -478,18 +559,20 @@
                                     <button @click="adoptSuggestion(suggestion)"
                                             :disabled="isAdopting"
                                             class="bg-motiveo-primary hover:bg-motiveo-primary/80 disabled:bg-gray-500 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all flex items-center space-x-1">
-                                        <span x-show="!isAdopting">❤️</span>
-                                        <span x-show="isAdopting">⏳</span>
+                                        <span x-show="!isAdopting"><i class="fas fa-heart"></i></span>
+                                        <span x-show="isAdopting"><i class="fas fa-spinner fa-spin"></i></span>
                                         <span x-text="isAdopting ? 'Agregando...' : 'Me gusta'"></span>
                                     </button>
                                 </div>
                             </div>
                         </template>
-
+    </div>  
                         <!-- Mensaje cuando no hay sugerencias -->
                         <div x-show="suggestions.popular && suggestions.popular.length === 0" 
                              class="text-center py-8">
-                            <div class="text-6xl mb-4">🎉</div>
+                            <div class="text-6xl mb-4 text-motiveo-success">
+                                <i class="fas fa-trophy"></i>
+                            </div>
                             <h3 class="text-white font-semibold mb-2">¡Excelente progreso!</h3>
                             <p class="text-white/60 text-sm">
                                 Ya tienes muchos hábitos populares. Explora las categorías below o crea un hábito personalizado.
@@ -498,9 +581,9 @@
                     </div>
 
                     <!-- Categorías de sugerencias -->
-                    <div class="mt-6 pt-6 border-t border-white/20">
+                    <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-12">
                         <h3 class="text-white font-semibold mb-4 flex items-center">
-                            <span class="mr-2">🏷️</span>
+                            <i class="fas fa-tags mr-2"></i>
                             Por Categorías
                         </h3>
                         <div class="grid grid-cols-2 gap-3">
@@ -508,7 +591,7 @@
                                 <div class="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all cursor-pointer"
                                      @click="showCategoryDetails(category, habits)">
                                     <div class="flex items-center space-x-2">
-                                        <span class="text-lg" x-text="getCategoryIcon(category)"></span>
+                                        <span class="text-lg" x-html="getCategoryIcon(category)"></span>
                                         <div>
                                             <div class="text-white text-sm font-medium capitalize" x-text="category"></div>
                                             <div class="text-white/60 text-xs" x-text="`${habits.length} opciones`"></div>
@@ -522,30 +605,30 @@
                     <div class="mt-6 text-center">
                         <a href="{{ route('formulario_habito.show') }}" 
                            class="text-motiveo-accent hover:text-motiveo-accent/80 text-sm font-medium inline-flex items-center space-x-1">
-                            <span>🎨</span>
+                            <i class="fas fa-palette"></i>
                             <span>¿No encuentras lo que buscas? Crea tu hábito personalizado</span>
-                            <span>→</span>
+                            <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
                 </div>
             </div>
 
             <!-- Center Panel - Hábitos Activos -->
-            <div class="space-y-6">
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div class="space-y-8 mt-24 mb-16 mx-4 sm:mx-6 lg:mx-8">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
                     <div class="flex items-center space-x-3 mb-6">
                         <div class="w-8 h-8 bg-motiveo-primary rounded-full flex items-center justify-center">
-                            <span class="text-white text-lg">🎯</span>
+                            <i class="fas fa-bullseye text-white text-sm"></i>
                         </div>
                         <h2 class="text-xl font-bold text-white">Hábitos de Hoy</h2>
                     </div>
 
-                    <div class="space-y-4" x-show="activeHabits.length > 0">
+                    <div class="space-y-8" x-show="activeHabits.length > 0">
                         <template x-for="habit in activeHabits" :key="habit.id">
-                            <div class="bg-white/5 rounded-xl p-4 border border-white/10">
-                                <div class="flex items-center justify-between mb-3">
+                            <div class="bg-white/5 rounded-xl p-6 border border-white/10">
+                                <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center space-x-3">
-                                        <span class="text-2xl" x-text="getCategoryIcon(habit.categoria)"></span>
+                                        <span class="text-2xl" x-html="getHabitIcon(habit)"></span>
                                         <div>
                                             <h3 class="text-white font-semibold" x-text="habit.nombre"></h3>
                                             <p class="text-white/60 text-xs" x-text="`Día ${habit.current_day || 1} de ${habit.duration_days || 30}`"></p>
@@ -558,7 +641,7 @@
                                 </div>
                                 
                                 <!-- Barra de progreso -->
-                                <div class="mb-3">
+                                <div class="mb-4">
                                     <div class="flex justify-between text-xs text-white/60 mb-1">
                                         <span>Progreso</span>
                                         <span x-text="`${habit.progress_percentage || 0}%`"></span>
@@ -571,7 +654,10 @@
 
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-2 text-sm">
-                                        <span class="text-motiveo-success" x-text="`🔥 ${habit.dias_racha}`"></span>
+                                        <span class="text-motiveo-success flex items-center">
+                                            <i class="fas fa-fire mr-1"></i>
+                                            <span x-text="`${habit.dias_racha} días`"></span>
+                                        </span>
                                         <span class="text-white/60">días</span>
                                     </div>
                                     <button @click="completeHabit(habit)"
@@ -586,7 +672,9 @@
                     </div>
 
                     <div x-show="activeHabits.length === 0" class="text-center py-8">
-                        <div class="text-6xl mb-4">🎉</div>
+                        <div class="text-6xl mb-4 text-motiveo-success">
+                            <i class="fas fa-trophy"></i>
+                        </div>
                         <h3 class="text-white font-semibold mb-2">¡Todos los hábitos completados!</h3>
                         <p class="text-white/60 text-sm">Excelente trabajo. ¡Sigue así!</p>
                     </div>
@@ -594,21 +682,21 @@
             </div>
 
             <!-- Right Panel - Completados y Estadísticas -->
-            <div class="space-y-6">
+            <div class="space-y-8 mt-24 mb-16 mx-4 sm:mx-6 lg:mx-8">
                 <!-- Completados Hoy -->
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
                     <div class="flex items-center space-x-3 mb-6">
                         <div class="w-8 h-8 bg-motiveo-success rounded-full flex items-center justify-center">
-                            <span class="text-white text-lg">✅</span>
+                            <i class="fas fa-check text-white text-sm"></i>
                         </div>
                         <h2 class="text-xl font-bold text-white">Completados Hoy</h2>
                     </div>
 
-                    <div class="space-y-3" x-show="completedHabits.length > 0">
+                    <div class="space-y-4" x-show="completedHabits.length > 0">
                         <template x-for="habit in completedHabits" :key="habit.id">
                             <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                                 <div class="flex items-center space-x-3">
-                                    <span x-text="getCategoryIcon(habit.categoria)"></span>
+                                    <span x-html="getHabitIcon(habit)"></span>
                                     <div>
                                         <div class="text-white text-sm" x-text="habit.nombre"></div>
                                         <div class="text-white/60 text-xs" x-text="`Día ${habit.current_day || 1} de ${habit.duration_days || 30} - ${habit.completed_at || ''}`"></div>
@@ -625,24 +713,24 @@
                 </div>
 
                 <!-- Progreso por Categoría -->
-                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 mt-8">
                     <div class="flex items-center space-x-3 mb-6">
                         <div class="w-8 h-8 bg-motiveo-primary rounded-full flex items-center justify-center">
-                            <span class="text-white text-lg">📊</span>
+                            <i class="fas fa-chart-bar text-white text-sm"></i>
                         </div>
                         <h2 class="text-xl font-bold text-white">Estadísticas</h2>
                     </div>
 
-                    <div class="space-y-4">
-                        <div class="text-center p-4 bg-white/5 rounded-lg">
+                    <div class="space-y-6">
+                        <div class="text-center p-6 bg-white/5 rounded-lg">
                             <div class="text-3xl font-black text-motiveo-warning mb-1" x-text="userStats.xp">
                                 {{ auth()->user()->xp ?? 0 }}
                             </div>
                             <div class="text-white/60 text-sm">Puntos de Experiencia</div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="text-center p-3 bg-white/5 rounded-lg">
+                        <div class="grid grid-cols-2 gap-8">
+                            <div class="text-center p-4 bg-white/5 rounded-lg">
                                 <div class="text-xl font-bold text-motiveo-success" x-text="totalHabits">
                                     {{ auth()->user()->habits()->count() ?? 0 }}
                                 </div>
@@ -680,10 +768,10 @@
              class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             
             <!-- Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between p-8 border-b border-gray-200">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-gradient-to-r from-motiveo-primary to-motiveo-secondary rounded-xl flex items-center justify-center">
-                        <span class="text-white text-lg">✨</span>
+                        <i class="fas fa-magic text-white text-lg"></i>
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-gray-900">Hábito</h2>
@@ -698,7 +786,7 @@
             </div>
 
             <!-- Progress Bar -->
-            <div class="px-6 pt-4">
+            <div class="px-8 pt-4">
                 <div class="w-full bg-gray-200 rounded-full h-2">
                     <div class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary h-2 rounded-full transition-all duration-300"
                          :style="`width: ${(createForm.step / 5) * 100}%`"></div>
@@ -706,11 +794,11 @@
             </div>
 
             <!-- Form Content -->
-            <form @submit.prevent="submitCreateForm()" class="p-6">
+            <form @submit.prevent="submitCreateForm()" class="p-8">
                 
                 <!-- Paso 1: Información Básica -->
-                <div x-show="createForm.step === 1" class="space-y-6">
-                    <div class="text-center mb-6">
+                <div x-show="createForm.step === 1" class="space-y-8">
+                    <div class="text-center mb-8">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Qué hábito quieres desarrollar?</h3>
                         <p class="text-gray-600">Comencemos con la información básica de tu nuevo hábito.</p>
                     </div>
@@ -748,7 +836,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.frequency === 'diario' ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">📅</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-calendar-day text-blue-500"></i></div>
                                         <div class="font-semibold">Diario</div>
                                         <div class="text-sm text-gray-600">Todos los días</div>
                                     </div>
@@ -759,7 +847,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.frequency === 'semanal' ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">📊</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-chart-bar text-purple-500"></i></div>
                                         <div class="font-semibold">Semanal</div>
                                         <div class="text-sm text-gray-600">Una vez por semana</div>
                                     </div>
@@ -776,7 +864,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.category === 'salud' ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">🏥</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-heartbeat text-red-500"></i></div>
                                         <div class="font-semibold">Salud</div>
                                     </div>
                                 </div>
@@ -786,7 +874,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.category === 'productividad' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">🏢</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-briefcase text-blue-500"></i></div>
                                         <div class="font-semibold">Productividad</div>
                                     </div>
                                 </div>
@@ -796,7 +884,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.category === 'bienestar' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">😊</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-smile text-yellow-500"></i></div>
                                         <div class="font-semibold">Bienestar</div>
                                     </div>
                                 </div>
@@ -806,7 +894,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.category === 'aprendizaje' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">📚</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-book text-green-500"></i></div>
                                         <div class="font-semibold">Aprendizaje</div>
                                     </div>
                                 </div>
@@ -822,7 +910,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.duration_days === 21 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">⏳</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-clock text-orange-500"></i></div>
                                         <div class="font-semibold">21 días</div>
                                         <div class="text-sm text-gray-600">Rápido</div>
                                     </div>
@@ -833,7 +921,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.duration_days === 30 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">📅</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-calendar-alt text-green-500"></i></div>
                                         <div class="font-semibold">30 días</div>
                                         <div class="text-sm text-gray-600">Recomendado</div>
                                     </div>
@@ -844,7 +932,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.duration_days === 60 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">🎯</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-bullseye text-purple-500"></i></div>
                                         <div class="font-semibold">60 días</div>
                                         <div class="text-sm text-gray-600">Desafío</div>
                                     </div>
@@ -855,7 +943,7 @@
                                 <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
                                      :class="createForm.duration_days === 90 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
                                     <div class="text-center">
-                                        <div class="text-2xl mb-2">🏆</div>
+                                        <div class="text-2xl mb-2"><i class="fas fa-trophy text-yellow-500"></i></div>
                                         <div class="font-semibold">90 días</div>
                                         <div class="text-sm text-gray-600">Experto</div>
                                     </div>
@@ -945,7 +1033,7 @@
                         <button type="submit" 
                                 x-show="createForm.step === 5"
                                 class="px-6 py-2 bg-gradient-to-r from-motiveo-success to-emerald-500 text-white rounded-lg hover:shadow-lg font-medium">
-                            🎉 Crear Hábito
+                            <i class="fas fa-rocket mr-1"></i>Crear Hábito
                         </button>
                     </div>
                 </div>
@@ -977,7 +1065,7 @@
             <form @submit.prevent="updateHabit()" class="p-8">
                 <!-- Header -->
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900">✏️ Editar Hábito</h2>
+                    <h2 class="text-3xl font-bold text-gray-900"><i class="fas fa-edit mr-2"></i>Editar Hábito</h2>
                     <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -1008,10 +1096,10 @@
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-transparent"
                                 required>
                             <option value="">Selecciona una categoría</option>
-                            <option value="salud">🏃‍♂️ Salud</option>
-                            <option value="productividad">💼 Productividad</option>
-                            <option value="bienestar">🧘‍♀️ Bienestar</option>
-                            <option value="aprendizaje">📚 Aprendizaje</option>
+                            <option value="salud"><i class="fas fa-heartbeat mr-2"></i>Salud</option>
+                            <option value="productividad"><i class="fas fa-briefcase mr-2"></i>Productividad</option>
+                            <option value="bienestar"><i class="fas fa-smile mr-2"></i>Bienestar</option>
+                            <option value="aprendizaje"><i class="fas fa-book mr-2"></i>Aprendizaje</option>
                         </select>
                     </div>
 
@@ -1064,7 +1152,7 @@
                     
                     <button type="submit" 
                             class="px-6 py-2 bg-gradient-to-r from-motiveo-primary to-blue-600 text-white rounded-lg hover:shadow-lg font-medium">
-                        💾 Actualizar Hábito
+                        <i class="fas fa-save mr-2"></i>Actualizar Hábito
                     </button>
                 </div>
             </form>
@@ -1096,7 +1184,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-motiveo-primary to-purple-600 flex items-center justify-center">
-                            <span x-text="expandedHabit?.icon || '🎯'" class="text-2xl"></span>
+                            <span x-text="expandedHabit?.icon || '<i class=\"fas fa-bullseye\"></i>'" class="text-2xl"></span>
                         </div>
                         <div>
                             <h3 x-text="expandedHabit?.name" class="text-xl font-bold text-white"></h3>
@@ -1127,14 +1215,14 @@
             <div class="p-6 space-y-6">
                 <!-- Descripción -->
                 <div>
-                    <h4 class="text-lg font-semibold text-white mb-2">📝 Descripción</h4>
+                    <h4 class="text-lg font-semibold text-white mb-2"><i class="fas fa-file-alt mr-2"></i>Descripción</h4>
                     <p x-text="expandedHabit?.description || 'Sin descripción disponible'" 
                        class="text-gray-300 leading-relaxed"></p>
                 </div>
 
                 <!-- Progreso visual -->
                 <div>
-                    <h4 class="text-lg font-semibold text-white mb-3">📊 Progreso</h4>
+                    <h4 class="text-lg font-semibold text-white mb-3"><i class="fas fa-chart-line mr-2"></i>Progreso</h4>
                     <div class="bg-gray-800/50 rounded-lg p-4">
                         <div class="flex justify-between text-sm text-gray-400 mb-2">
                             <span>Días completados</span>
@@ -1149,7 +1237,7 @@
 
                 <!-- Guía paso a paso -->
                 <div x-show="expandedHabit && !(expandedHabit.today_completed || expandedHabit.status === 'completed')">
-                    <h4 class="text-lg font-semibold text-white mb-3">🎯 Guía paso a paso</h4>
+                    <h4 class="text-lg font-semibold text-white mb-3"><i class="fas fa-route mr-2"></i>Guía paso a paso</h4>
                     <div class="space-y-3">
                         <template x-for="(step, index) in getHabitSteps(expandedHabit)" :key="index">
                             <div class="flex items-start space-x-3 p-3 rounded-lg bg-gray-800/30 border border-gray-700/50 hover:border-motiveo-primary/30 transition-colors">
@@ -1181,25 +1269,25 @@
                     <template x-if="expandedHabit && !expandedHabit.is_completed">
                         <button @click="handleHabitAction(expandedHabit.id, 'complete')"
                                 class="w-full py-3 px-4 bg-gradient-to-r from-motiveo-success to-emerald-500 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium">
-                            ✅ Marcar como Completado
+                            <i class="fas fa-check mr-2"></i>Marcar como Completado
                         </button>
                     </template>
                     
                     <template x-if="expandedHabit && expandedHabit.is_completed">
                         <button @click="handleHabitAction(expandedHabit.id, 'undo')"
                                 class="w-full py-3 px-4 bg-gradient-to-r from-motiveo-warning to-orange-500 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium">
-                            ↩️ Deshacer Completado
+                            <i class="fas fa-undo mr-2"></i>Deshacer Completado
                         </button>
                     </template>
                     
                     <button @click="showEditHabit(expandedHabit)"
                             class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium">
-                        ✏️ Editar Hábito
+                        <i class="fas fa-edit mr-2"></i>Editar Hábito
                     </button>
                     
                     <button @click="confirmDeleteHabit(expandedHabit)"
                             class="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium">
-                        🗑️ Eliminar Hábito
+                        <i class="fas fa-trash mr-2"></i>Eliminar Hábito
                     </button>
                 </div>
             </div>
@@ -1256,41 +1344,111 @@
                         </div>
 
                         <!-- Category Filter -->
-                        <div class="md:w-48 relative">
-                            <select x-model="explorerFilters.category" 
-                                    @change="searchHabits()"
+                        <div class="md:w-48 relative" x-data="{ isOpen: false }">
+                            <button @click="isOpen = !isOpen" 
                                     @click.stop
-                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer">
-                                <option value="all" class="bg-gray-800 text-white">🌟 Todas las categorías</option>
-                                <option value="salud" class="bg-gray-800 text-white">🏃‍♂️ Salud</option>
-                                <option value="productividad" class="bg-gray-800 text-white">⚡ Productividad</option>
-                                <option value="bienestar" class="bg-gray-800 text-white">😌 Bienestar</option>
-                                <option value="aprendizaje" class="bg-gray-800 text-white">📚 Aprendizaje</option>
-                                <option value="finanzas" class="bg-gray-800 text-white">💰 Finanzas</option>
-                                <option value="relaciones" class="bg-gray-800 text-white">❤️ Relaciones</option>
-                            </select>
-                            <!-- Custom dropdown arrow -->
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer flex items-center justify-between">
+                                <span x-show="explorerFilters.category === 'all'" class="flex items-center">
+                                    <i class="fas fa-star mr-2"></i>Todas las categorías
+                                </span>
+                                <span x-show="explorerFilters.category === 'salud'" class="flex items-center">
+                                    <i class="fas fa-heartbeat mr-2"></i>Salud
+                                </span>
+                                <span x-show="explorerFilters.category === 'productividad'" class="flex items-center">
+                                    <i class="fas fa-briefcase mr-2"></i>Productividad
+                                </span>
+                                <span x-show="explorerFilters.category === 'bienestar'" class="flex items-center">
+                                    <i class="fas fa-smile mr-2"></i>Bienestar
+                                </span>
+                                <span x-show="explorerFilters.category === 'aprendizaje'" class="flex items-center">
+                                    <i class="fas fa-book mr-2"></i>Aprendizaje
+                                </span>
+                                <span x-show="explorerFilters.category === 'finanzas'" class="flex items-center">
+                                    <i class="fas fa-dollar-sign mr-2"></i>Finanzas
+                                </span>
+                                <span x-show="explorerFilters.category === 'relaciones'" class="flex items-center">
+                                    <i class="fas fa-heart mr-2"></i>Relaciones
+                                </span>
                                 <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div x-show="isOpen" 
+                                 @click.away="isOpen = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute z-50 w-full mt-1 bg-gray-800 border border-white/20 rounded-xl shadow-lg max-h-60 overflow-auto">
+                                <button @click="explorerFilters.category = 'all'; searchHabits(); isOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-star mr-2"></i>Todas las categorías
+                                </button>
+                                <button @click="explorerFilters.category = 'salud'; searchHabits(); isOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-heartbeat mr-2"></i>Salud
+                                </button>
+                                <button @click="explorerFilters.category = 'productividad'; searchHabits(); isOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-briefcase mr-2"></i>Productividad
+                                </button>
+                                <button @click="explorerFilters.category = 'bienestar'; searchHabits(); isOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-smile mr-2"></i>Bienestar
+                                </button>
+                                <button @click="explorerFilters.category = 'aprendizaje'; searchHabits(); isOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-book mr-2"></i>Aprendizaje
+                                </button>
+                                <button @click="explorerFilters.category = 'finanzas'; searchHabits(); isOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-dollar-sign mr-2"></i>Finanzas
+                                </button>
+                                <button @click="explorerFilters.category = 'relaciones'; searchHabits(); isOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-heart mr-2"></i>Relaciones
+                                </button>
                             </div>
                         </div>
 
                         <!-- Sort Options -->
-                        <div class="md:w-48 relative">
-                            <select x-model="explorerFilters.sort" 
-                                    @change="searchHabits()"
+                        <div class="md:w-48 relative" x-data="{ isSortOpen: false }">
+                            <button @click="isSortOpen = !isSortOpen" 
                                     @click.stop
-                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer">
-                                <option value="popularity" class="bg-gray-800 text-white">⭐ Más populares</option>
-                                <option value="name" class="bg-gray-800 text-white">🔤 Alfabético</option>
-                            </select>
-                            <!-- Custom dropdown arrow -->
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer flex items-center justify-between">
+                                <span x-show="explorerFilters.sort === 'popularity'" class="flex items-center">
+                                    <i class="fas fa-star mr-2"></i>Más populares
+                                </span>
+                                <span x-show="explorerFilters.sort === 'name'" class="flex items-center">
+                                    <i class="fas fa-sort-alpha-down mr-2"></i>Alfabético
+                                </span>
                                 <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
+                            </button>
+                            
+                            <!-- Sort Dropdown Menu -->
+                            <div x-show="isSortOpen" 
+                                 @click.away="isSortOpen = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute z-50 w-full mt-1 bg-gray-800 border border-white/20 rounded-xl shadow-lg">
+                                <button @click="explorerFilters.sort = 'popularity'; searchHabits(); isSortOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-star mr-2"></i>Más populares
+                                </button>
+                                <button @click="explorerFilters.sort = 'name'; searchHabits(); isSortOpen = false" 
+                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                    <i class="fas fa-sort-alpha-down mr-2"></i>Alfabético
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1301,7 +1459,7 @@
                             <button @click.stop="explorerFilters.category = category.key; searchHabits()"
                                     :class="explorerFilters.category === category.key ? 'bg-motiveo-primary text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'"
                                     class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                                    x-text="category.label">
+                                    x-html="category.label">
                             </button>
                         </template>
                     </div>
@@ -1330,7 +1488,7 @@
                                 <!-- Habit Header -->
                                 <div class="flex items-start justify-between mb-3">
                                     <div class="flex items-center space-x-3">
-                                        <div class="text-2xl" x-text="habit.icon || getCategoryIcon(habit.categoria)"></div>
+                                        <div class="text-2xl" x-html="habit.icon || getHabitIcon(habit)"></div>
                                         <div>
                                             <h3 class="text-white font-semibold text-sm line-clamp-1" x-text="habit.name"></h3>
                                             <span class="text-xs px-2 py-1 rounded-full capitalize"
@@ -1340,7 +1498,7 @@
                                         </div>
                                     </div>
                                     <div class="text-xs text-white/50">
-                                        ❤️ <span x-text="habit.popularity"></span>
+                                        <i class="fas fa-users mr-1"></i> <span x-text="habit.popularity"></span>
                                     </div>
                                 </div>
 
@@ -1350,7 +1508,7 @@
                                 <!-- Benefits -->
                                 <div x-show="habit.benefits" class="mb-3">
                                     <p class="text-white/60 text-xs">
-                                        <span class="text-motiveo-success">✨ Beneficios:</span>
+                                        <span class="text-motiveo-success"><i class="fas fa-sparkles mr-1"></i>Beneficios:</span>
                                         <span class="line-clamp-1" x-text="habit.benefits"></span>
                                     </p>
                                 </div>
@@ -1358,12 +1516,12 @@
                                 <!-- Steps Preview -->
                                 <div x-show="habit.steps && habit.steps.length > 0" class="mb-3">
                                     <p class="text-white/60 text-xs mb-1">
-                                        <span class="text-motiveo-accent">📋 Pasos:</span>
+                                        <span class="text-motiveo-accent"><i class="fas fa-list-ul mr-1"></i>Pasos:</span>
                                     </p>
                                     <ul class="text-xs text-white/50 space-y-1">
                                         <template x-for="(step, index) in habit.steps.slice(0, 2)" :key="index">
                                             <li class="flex items-start space-x-2">
-                                                <span class="text-motiveo-accent mt-0.5">•</span>
+                                                <span class="text-motiveo-accent mt-0.5"><i class="fas fa-circle text-xs"></i></span>
                                                 <span class="line-clamp-1" x-text="step"></span>
                                             </li>
                                         </template>
@@ -1390,7 +1548,7 @@
 
                     <!-- No Results -->
                     <div x-show="!explorerLoading && explorerHabits.length === 0" class="text-center py-8">
-                        <div class="text-6xl mb-4">🔍</div>
+                        <div class="text-6xl mb-4"><i class="fas fa-search text-blue-500"></i></div>
                         <h3 class="text-white font-semibold mb-2">No se encontraron hábitos</h3>
                         <p class="text-white/60 text-sm">
                             Intenta cambiar los filtros o términos de búsqueda.
@@ -1402,7 +1560,7 @@
                 <div class="p-6 border-t border-white/10 bg-white/5">
                     <div class="flex justify-between items-center">
                         <p class="text-white/60 text-sm">
-                            💡 Explora diferentes categorías para encontrar hábitos que se adapten a tus objetivos
+                            <i class="fas fa-lightbulb mr-2"></i>Explora diferentes categorías para encontrar hábitos que se adapten a tus objetivos
                         </p>
                         <button @click.stop="showHabitExplorer = false"
                                 class="bg-motiveo-primary hover:bg-motiveo-primary/80 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
@@ -1470,13 +1628,13 @@
                     sort: 'popularity'
                 },
                 explorerCategories: [
-                    { key: 'all', label: '🌟 Todos' },
-                    { key: 'salud', label: '🏃‍♂️ Salud' },
-                    { key: 'productividad', label: '⚡ Productividad' },
-                    { key: 'bienestar', label: '😌 Bienestar' },
-                    { key: 'aprendizaje', label: '📚 Aprendizaje' },
-                    { key: 'finanzas', label: '💰 Finanzas' },
-                    { key: 'relaciones', label: '❤️ Relaciones' }
+                    { key: 'all', label: '<i class="fas fa-star mr-2"></i>Todos' },
+                    { key: 'salud', label: '<i class="fas fa-heartbeat mr-2"></i>Salud' },
+                    { key: 'productividad', label: '<i class="fas fa-briefcase mr-2"></i>Productividad' },
+                    { key: 'bienestar', label: '<i class="fas fa-smile mr-2"></i>Bienestar' },
+                    { key: 'aprendizaje', label: '<i class="fas fa-book mr-2"></i>Aprendizaje' },
+                    { key: 'finanzas', label: '<i class="fas fa-dollar-sign mr-2"></i>Finanzas' },
+                    { key: 'relaciones', label: '<i class="fas fa-heart mr-2"></i>Relaciones' }
                 ],
 
                 init() {
@@ -1491,7 +1649,7 @@
 
                 async loadUserHabits() {
                     try {
-                        console.log('🔄 Cargando hábitos del usuario...');
+                        console.log('[LOADING] Cargando hábitos del usuario...');
                         const response = await fetch('/api/user-habits');
                         
                         if (!response.ok) {
@@ -1499,7 +1657,7 @@
                         }
                         
                         const data = await response.json();
-                        console.log('📥 Datos recibidos:', data);
+                        console.log('[DATA] Datos recibidos:', data);
                         
                         this.activeHabits = data.active_habits || [];
                         this.completedHabits = data.completed_today || [];
@@ -1507,7 +1665,7 @@
                         this.totalHabits = this.userHabits.length;
                         this.userStats = data.user_stats;
                         
-                        console.log('✅ Hábitos cargados:', {
+                        console.log('[SUCCESS] Hábitos cargados:', {
                             activos: this.activeHabits.length,
                             completados: this.completedHabits.length,
                             total: this.userHabits.length
@@ -1518,8 +1676,8 @@
                             this.showSuggestions = true;
                         }
                     } catch (error) {
-                        console.error('❌ Error loading habits:', error);
-                        this.showNotification('❌ Error al cargar los hábitos');
+                        console.error('[ERROR] Error loading habits:', error);
+                        this.showNotification('Error al cargar los hábitos');
                     }
                 },
 
@@ -1861,14 +2019,40 @@
 
                 getCategoryIcon(categoria) {
                     const icons = {
-                        'salud': '🏥',
-                        'productividad': '🏢', 
-                        'bienestar': '😊',
-                        'aprendizaje': '📚',
-                        'finanzas': '💰',
-                        'relaciones': '❤️'
+                        'salud': '<i class="fas fa-heartbeat text-red-500"></i>',
+                        'productividad': '<i class="fas fa-briefcase text-blue-500"></i>', 
+                        'bienestar': '<i class="fas fa-smile text-yellow-500"></i>',
+                        'aprendizaje': '<i class="fas fa-book text-green-500"></i>',
+                        'finanzas': '<i class="fas fa-dollar-sign text-green-600"></i>',
+                        'relaciones': '<i class="fas fa-heart text-pink-500"></i>',
+                        'ejercicio': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
+                        'fitness': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
+                        'deporte': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
+                        'correr': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>'
                     };
-                    return icons[categoria] || '🎯';
+                    return icons[categoria] || '<i class="fas fa-bullseye"></i>';
+                },
+
+                // Nueva función para detectar hábitos de ejercicio por nombre/descripción
+                getHabitIcon(habit) {
+                    const nombre = habit.nombre?.toLowerCase() || '';
+                    const descripcion = habit.descripcion?.toLowerCase() || '';
+                    const categoria = habit.categoria?.toLowerCase() || '';
+                    
+                    // Palabras clave relacionadas con ejercicio/correr
+                    const ejercicioKeywords = ['correr', 'running', 'trotar', 'caminar', 'walk', 'ejercicio', 'gym', 'gimnasio', 'fitness', 'entrenamiento', 'cardio', 'deportes', 'deporte'];
+                    
+                    const esEjercicio = ejercicioKeywords.some(keyword => 
+                        nombre.includes(keyword) || 
+                        descripcion.includes(keyword) || 
+                        categoria.includes(keyword)
+                    );
+                    
+                    if (esEjercicio) {
+                        return '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>';
+                    }
+                    
+                    return this.getCategoryIcon(categoria);
                 },
 
                 // Nuevas funciones para el modal expandido
@@ -2045,15 +2229,15 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            this.showNotification('✅ Hábito actualizado exitosamente');
+                            this.showNotification('Hábito actualizado exitosamente');
                             this.showEditModal = false;
                             await this.loadUserHabits(); // Recargar hábitos
                         } else {
-                            this.showNotification('❌ Error al actualizar el hábito');
+                            this.showNotification('Error al actualizar el hábito');
                         }
                     } catch (error) {
                         console.error('Error updating habit:', error);
-                        this.showNotification('❌ Error al actualizar el hábito');
+                        this.showNotification('Error al actualizar el hábito');
                     }
                 },
 
@@ -2076,15 +2260,15 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            this.showNotification('🗑️ Hábito eliminado exitosamente');
+                            this.showNotification('Hábito eliminado exitosamente');
                             this.closeHabitDetails(); // Cerrar modal expandido si está abierto
                             await this.loadUserHabits(); // Recargar hábitos
                         } else {
-                            this.showNotification('❌ Error al eliminar el hábito');
+                            this.showNotification('Error al eliminar el hábito');
                         }
                     } catch (error) {
                         console.error('Error deleting habit:', error);
-                        this.showNotification('❌ Error al eliminar el hábito');
+                        this.showNotification('Error al eliminar el hábito');
                     }
                 },
 
@@ -2114,7 +2298,7 @@
                         console.log('Explorer habits loaded:', this.explorerHabits.length);
                     } catch (error) {
                         console.error('Error loading all habits:', error);
-                        this.showNotification('❌ Error al cargar los hábitos');
+                        this.showNotification('Error al cargar los hábitos');
                     } finally {
                         this.explorerLoading = false;
                     }
@@ -2126,7 +2310,7 @@
 
                 async adoptSuggestionFromExplorer(habit) {
                     try {
-                        console.log('🔄 Adoptando hábito:', habit);
+                        console.log('[ADOPT] Adoptando hábito:', habit);
                         this.isAdopting = true;
                         
                         const response = await fetch(`/habits/suggestions/${habit.id}/add`, {
@@ -2138,10 +2322,10 @@
                         });
 
                         const data = await response.json();
-                        console.log('📥 Respuesta del servidor:', data);
+                        console.log('[RESPONSE] Respuesta del servidor:', data);
                         
                         if (data.success) {
-                            this.showNotification(`✅ ${habit.name} agregado a Mis Hábitos!`);
+                            this.showNotification(`${habit.name} agregado a Mis Hábitos!`);
                             
                             // Celebration
                             this.launchConfetti();
@@ -2150,21 +2334,21 @@
                             await new Promise(resolve => setTimeout(resolve, 500));
                             
                             // Update UI - con logs de depuración
-                            console.log('🔄 Recargando hábitos del usuario...');
+                            console.log('[RELOAD] Recargando hábitos del usuario...');
                             await this.loadUserHabits();
-                            console.log('✅ Hábitos del usuario recargados. Total:', this.userHabits.length);
+                            console.log('[SUCCESS] Hábitos del usuario recargados. Total:', this.userHabits.length);
                             
                             await this.loadSuggestions();
                             
                             // Optionally close explorer after adoption
                             // this.showHabitExplorer = false;
                         } else {
-                            console.error('❌ Error en la respuesta:', data);
-                            this.showNotification(data.message || '❌ Error al agregar el hábito');
+                            console.error('[ERROR] Error en la respuesta:', data);
+                            this.showNotification(data.message || 'Error al agregar el hábito');
                         }
                     } catch (error) {
                         console.error('Error adopting habit from explorer:', error);
-                        this.showNotification('❌ Error al agregar el hábito');
+                        this.showNotification('Error al agregar el hábito');
                     } finally {
                         this.isAdopting = false;
                     }
@@ -2199,14 +2383,14 @@
 
                 async debugHabits() {
                     try {
-                        console.log('🐛 Depurando hábitos...');
+                        console.log('[DEBUG] Depurando hábitos...');
                         const response = await fetch('/debug/habits');
                         const data = await response.json();
-                        console.log('🐛 Datos de depuración:', data);
-                        this.showNotification(`🐛 Debug: ${data.total_habits} hábitos encontrados`);
+                        console.log('[DEBUG] Datos de depuración:', data);
+                        this.showNotification(`Debug: ${data.total_habits} hábitos encontrados`);
                     } catch (error) {
-                        console.error('❌ Error en debug:', error);
-                        this.showNotification('❌ Error en debug');
+                        console.error('[ERROR] Error en debug:', error);
+                        this.showNotification('Error en debug');
                     }
                 },
 
@@ -2223,6 +2407,413 @@
                 }
             }
         }
+    </script>
+
+    <!-- Custom CSS Animations -->
+    <style>
+        /* Animaciones de entrada y carga */
+        body.loaded {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        /* Animaciones de deslizamiento */
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeInLeft {
+            from { transform: translateX(-30px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeInRight {
+            from { transform: translateX(30px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Animaciones de elementos específicos */
+        @keyframes bounceSubtle {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-3px); }
+            60% { transform: translateY(-2px); }
+        }
+
+        @keyframes bounceGentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.6); }
+        }
+
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+            50% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+        }
+
+        @keyframes textShine {
+            0% { background-position: -100%; }
+            100% { background-position: 100%; }
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: var(--progress-width, 0%); }
+        }
+
+        @keyframes numberCount {
+            from { transform: scale(0.8); opacity: 0.5; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes cardAppear {
+            from { 
+                transform: translateY(30px) scale(0.95); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateY(0) scale(1); 
+                opacity: 1; 
+            }
+        }
+
+        @keyframes completedGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.6); }
+        }
+
+        @keyframes iconBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes fireFlicker {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-2deg); }
+            75% { transform: scale(1.05) rotate(2deg); }
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
+        }
+
+        @keyframes calendarFlip {
+            0%, 100% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg); }
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        @keyframes successPulse {
+            0%, 100% { background-color: rgb(34, 197, 94); transform: scale(1); }
+            50% { background-color: rgb(22, 163, 74); transform: scale(1.1); }
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { background-color: rgb(251, 191, 36); transform: scale(1); }
+            50% { background-color: rgb(245, 158, 11); transform: scale(1.1); }
+        }
+
+        @keyframes textShimmer {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        @keyframes pulseButton {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes fadeInUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes textTyping {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes spinReverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        @keyframes bugWiggle {
+            0%, 100% { transform: rotate(0deg); }
+            10% { transform: rotate(-5deg); }
+            20% { transform: rotate(5deg); }
+            30% { transform: rotate(-3deg); }
+            40% { transform: rotate(3deg); }
+            50% { transform: rotate(0deg); }
+        }
+
+        /* Aplicación de animaciones */
+        .animate-slide-down { animation: slideDown 0.8s ease-out; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out; }
+        .animate-fade-in-left { animation: fadeInLeft 0.8s ease-out; }
+        .animate-fade-in-right { animation: fadeInRight 0.8s ease-out; }
+        .animate-fade-in-right-delayed { animation: fadeInRight 0.8s ease-out 0.2s both; }
+        .animate-fade-in-delayed { animation: fadeInLeft 0.6s ease-out 0.3s both; }
+        
+        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out; }
+        .animate-text-typing { animation: textTyping 0.3s ease-out; }
+        .animate-spin-reverse { animation: spinReverse 0.5s linear; }
+        
+        .animate-bounce-subtle { animation: bounceSubtle 2s infinite; }
+        .animate-bounce-gentle { animation: bounceGentle 2s infinite; }
+        .animate-wiggle { animation: wiggle 0.5s ease-in-out; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-float-delayed { animation: float 3s ease-in-out infinite; animation-delay: 1s; }
+        
+        .animate-pulse-glow { animation: pulseGlow 2s infinite; }
+        .animate-text-glow { animation: textGlow 3s infinite; }
+        .animate-text-shine { 
+            background: linear-gradient(90deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.8) 100%);
+            background-size: 200% 100%;
+            animation: textShine 3s infinite;
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+        
+        .animate-progress-fill { animation: progressFill 1.5s ease-out; }
+        .animate-number-count { animation: numberCount 0.3s ease-out; }
+        .animate-card-appear { animation: cardAppear 0.7s ease-out; }
+        .animate-completed-glow { animation: completedGlow 2s infinite; }
+        
+        .animate-icon-bounce { animation: iconBounce 2s infinite; }
+        .animate-fire-flicker { animation: fireFlicker 2s infinite; }
+        .animate-star-twinkle { animation: starTwinkle 3s infinite; }
+        .animate-calendar-flip { animation: calendarFlip 2s infinite; }
+        .animate-status-pulse { animation: statusPulse 2s infinite; }
+        .animate-success-pulse { animation: successPulse 2s infinite; }
+        .animate-warning-pulse { animation: warningPulse 2s infinite; }
+        .animate-text-shimmer { animation: textShimmer 2s infinite; }
+        .animate-pulse-button { animation: pulseButton 2s infinite; }
+        .animate-bug-wiggle:hover { animation: bugWiggle 1s ease-in-out; }
+
+        /* Animaciones de hover */
+        .animate-wiggle-on-hover:hover { animation: wiggle 0.5s ease-in-out; }
+        .animate-spin-on-hover:hover .fas { animation: spin 0.5s linear; }
+
+        /* Efectos de hover para grupos */
+        .group:hover .group-button-hover\:animate-spin-reverse {
+            animation: spin 0.5s linear reverse;
+        }
+
+        /* Responsive animations */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Mejoras visuales adicionales */
+        .backdrop-blur-enhanced {
+            backdrop-filter: blur(12px) saturate(200%);
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+
+    <script>
+        // Agregar efectos de animación dinámicos
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animación de carga inicial
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 100);
+
+            // Efectos de partículas en hover para botones importantes
+            document.querySelectorAll('button').forEach(button => {
+                button.addEventListener('mouseenter', function(e) {
+                    if (this.classList.contains('animate-pulse-button')) {
+                        this.style.boxShadow = '0 0 30px rgba(139, 92, 246, 0.6)';
+                        this.style.transform = 'scale(1.05) translateY(-2px)';
+                    }
+                });
+
+                button.addEventListener('mouseleave', function(e) {
+                    this.style.boxShadow = '';
+                    this.style.transform = '';
+                });
+
+                // Efecto de onda al hacer clic
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.style.cssText = `
+                        position: absolute;
+                        width: ${size}px;
+                        height: ${size}px;
+                        left: ${x}px;
+                        top: ${y}px;
+                        background: rgba(255, 255, 255, 0.3);
+                        border-radius: 50%;
+                        transform: scale(0);
+                        animation: ripple 0.6s ease-out;
+                        pointer-events: none;
+                        z-index: 1;
+                    `;
+                    
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        if (ripple.parentNode) {
+                            ripple.parentNode.removeChild(ripple);
+                        }
+                    }, 600);
+                });
+            });
+
+            // Animación de números contadores
+            function animateCounter(element, target, duration = 1000) {
+                const start = parseInt(element.textContent) || 0;
+                const increment = (target - start) / (duration / 16);
+                let current = start;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if ((increment > 0 && current >= target) || (increment < 0 && current <= target)) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    element.textContent = Math.round(current);
+                }, 16);
+            }
+
+            // Observador para animaciones en scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animation = 'cardAppear 0.6s ease-out forwards';
+                        
+                        // Animar contadores si los encuentra
+                        const counters = entry.target.querySelectorAll('[data-counter]');
+                        counters.forEach(counter => {
+                            const target = parseInt(counter.getAttribute('data-counter'));
+                            animateCounter(counter, target);
+                        });
+                        
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            // Efectos de paralaje suave en scroll
+            let ticking = false;
+            function updateParallax() {
+                const scrolled = window.pageYOffset;
+                const parallaxElements = document.querySelectorAll('[data-parallax]');
+                
+                parallaxElements.forEach(element => {
+                    const speed = element.getAttribute('data-parallax') || 0.5;
+                    const transform = `translateY(${scrolled * speed}px)`;
+                    element.style.transform = transform;
+                });
+                
+                ticking = false;
+            }
+
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    requestAnimationFrame(updateParallax);
+                    ticking = true;
+                }
+            });
+
+            // Efecto de cursor personalizado para áreas interactivas
+            const cursor = document.createElement('div');
+            cursor.className = 'custom-cursor';
+            cursor.style.cssText = `
+                position: fixed;
+                width: 20px;
+                height: 20px;
+                background: radial-gradient(circle, rgba(139, 92, 246, 0.8) 0%, rgba(139, 92, 246, 0) 70%);
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 9999;
+                mix-blend-mode: difference;
+                transition: transform 0.1s ease;
+                display: none;
+            `;
+            document.body.appendChild(cursor);
+
+            document.addEventListener('mousemove', (e) => {
+                cursor.style.left = e.clientX - 10 + 'px';
+                cursor.style.top = e.clientY - 10 + 'px';
+                cursor.style.display = 'block';
+            });
+
+            document.addEventListener('mouseleave', () => {
+                cursor.style.display = 'none';
+            });
+
+            // Mejorar hover effects para tarjetas
+            document.querySelectorAll('.habit-card, .suggestion-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                    this.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.3)';
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                    this.style.boxShadow = '';
+                });
+            });
+        });
+
+        // Agregar animación de ripple en CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple {
+                0% { transform: scale(0); opacity: 1; }
+                100% { transform: scale(4); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
