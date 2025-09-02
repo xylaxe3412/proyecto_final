@@ -14,7 +14,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Comer 5 porciones de frutas y verduras',
                 'description' => 'Consumir al menos 5 porciones de frutas y verduras frescas diariamente',
-                'icon' => '<i class="fas fa-leaf text-green-500"></i>',
+                'icon' => '<lottie-player src="/animations/health.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
                 'categoria' => 'salud',
                 'popularity' => 115,
                 'frequency_suggestions' => ['diario'],
@@ -30,7 +30,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Tomar vitaminas diarias',
                 'description' => 'Consumir suplementos vitamínicos esenciales según necesidades personales',
-                'icon' => '<i class="fas fa-pills text-red-500"></i>',
+                'icon' => '<lottie-player src="/animations/health.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
                 'categoria' => 'salud',
                 'popularity' => 90,
                 'frequency_suggestions' => ['diario'],
@@ -46,7 +46,7 @@ class HabitSuggestionsSeederPart3 extends Seeder
             [
                 'name' => 'Hacer ejercicios de respiración',
                 'description' => 'Practicar técnicas de respiración profunda por 5-10 minutos diarios',
-                'icon' => '<i class="fas fa-lungs text-red-500"></i>',
+                'icon' => '<lottie-player src="/animations/meditation.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
                 'categoria' => 'salud',
                 'popularity' => 85,
                 'frequency_suggestions' => ['diario'],

@@ -50,6 +50,20 @@
             overflow: hidden;
         }
         
+        /* Estilos para animaciones Lottie */
+        lottie-player {
+            display: inline-block;
+            min-width: 64px !important;
+            min-height: 64px !important;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        lottie-player:hover {
+            transform: scale(1.15);
+        }
+        }
+        
         .habit-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
@@ -336,7 +350,7 @@
                     <!-- Header de la tarjeta -->
                     <div class="flex items-start justify-between mb-6">
                         <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300
+                            <div class="w-15 h-15 rounded-xl flex items-center justify-center transition-all duration-300
                                         group-hover:scale-110 group-hover:rotate-6 animate-icon-bounce"
                                  :class="getCategoryStyle(habit.categoria)">
                                 <span class="text-xl" x-html="getHabitIcon(habit)"></span>
@@ -464,7 +478,7 @@
                          x-transition:enter-start="opacity-0 translate-y-8 scale-95"
                          x-transition:enter-end="opacity-100 translate-y-0 scale-100">
                         <div class="flex items-center space-x-3 mb-3">
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 
+                            <div class="w-14 h-14 rounded-lg flex items-center justify-center group-hover:scale-110 
                                         group-hover:rotate-6 transition-all duration-300 animate-icon-bounce"
                                  :class="getCategoryStyle(suggestion.categoria)">
                                 <span class="text-lg" x-html="getCategoryIcon(suggestion.categoria)"></span>
@@ -504,7 +518,7 @@
                              x-transition:enter-start="opacity-0 translate-y-8 scale-95"
                              x-transition:enter-end="opacity-100 translate-y-0 scale-100">
                             <div class="text-center">
-                                <div class="w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2 
+                                <div class="w-20 h-14 rounded-lg flex items-center justify-center mx-auto mb-2 
                                            group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 animate-icon-bounce"
                                      :class="getCategoryStyle(category)">
                                     <span class="text-xl" x-html="getCategoryIcon(category)"></span>
@@ -2018,19 +2032,20 @@
                 },
 
                 getCategoryIcon(categoria) {
+                    // Iconos animados Lottie directos
                     const icons = {
-                        'salud': '<i class="fas fa-heartbeat text-red-500"></i>',
-                        'productividad': '<i class="fas fa-briefcase text-blue-500"></i>', 
-                        'bienestar': '<i class="fas fa-smile text-yellow-500"></i>',
-                        'aprendizaje': '<i class="fas fa-book text-green-500"></i>',
-                        'finanzas': '<i class="fas fa-dollar-sign text-green-600"></i>',
-                        'relaciones': '<i class="fas fa-heart text-pink-500"></i>',
-                        'ejercicio': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
-                        'fitness': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
-                        'deporte': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>',
-                        'correr': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>'
+                        'salud': '<lottie-player src="/animations/health.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'productividad': '<lottie-player src="/animations/productivity.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'bienestar': '<lottie-player src="/animations/wellbeing.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'aprendizaje': '<lottie-player src="/animations/learning.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'finanzas': '<lottie-player src="/animations/finances.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'relaciones': '<lottie-player src="/animations/relationships.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'ejercicio': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'fitness': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'deporte': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>',
+                        'correr': '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>'
                     };
-                    return icons[categoria] || '<i class="fas fa-bullseye"></i>';
+                    return icons[categoria] || '<lottie-player src="/animations/health.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
                 },
 
                 // Nueva función para detectar hábitos de ejercicio por nombre/descripción
@@ -2041,17 +2056,65 @@
                     
                     // Palabras clave relacionadas con ejercicio/correr
                     const ejercicioKeywords = ['correr', 'running', 'trotar', 'caminar', 'walk', 'ejercicio', 'gym', 'gimnasio', 'fitness', 'entrenamiento', 'cardio', 'deportes', 'deporte'];
+                    const saludKeywords = ['salud', 'dormir', 'vitaminas', 'medicina', 'doctor', 'hospital', 'nutrición'];
+                    const aguaKeywords = ['agua', 'hidrat', 'beber', 'líquido', 'water'];
+                    const meditacionKeywords = ['meditar', 'meditation', 'mindfulness', 'relajar', 'yoga', 'respirar', 'calma', 'zen'];
+                    const lecturaKeywords = ['leer', 'lectura', 'libro', 'estudiar', 'aprender', 'curso', 'educación'];
+                    const finanzasKeywords = ['dinero', 'ahorro', 'presupuesto', 'invertir', 'finanzas', 'económico', 'gastos'];
+                    const relacionesKeywords = ['familia', 'amigos', 'pareja', 'social', 'comunicar', 'amor', 'relación'];
+                    const productividadKeywords = ['trabajo', 'productividad', 'planificar', 'organizar', 'metas', 'objetivos', 'tareas'];
                     
                     const esEjercicio = ejercicioKeywords.some(keyword => 
-                        nombre.includes(keyword) || 
-                        descripcion.includes(keyword) || 
-                        categoria.includes(keyword)
+                        nombre.includes(keyword) || descripcion.includes(keyword) || categoria.includes(keyword)
+                    );
+                    
+                    const esSalud = saludKeywords.some(keyword => 
+                        nombre.includes(keyword) || descripcion.includes(keyword) || categoria.includes(keyword)
+                    );
+                    
+                    const esAgua = aguaKeywords.some(keyword => 
+                        nombre.includes(keyword) || descripcion.includes(keyword)
+                    );
+                    
+                    const esMeditacion = meditacionKeywords.some(keyword => 
+                        nombre.includes(keyword) || descripcion.includes(keyword) || categoria.includes(keyword)
+                    );
+                    
+                    const esLectura = lecturaKeywords.some(keyword => 
+                        nombre.includes(keyword) || descripcion.includes(keyword) || categoria.includes(keyword)
+                    );
+                    
+                    const esFinanzas = finanzasKeywords.some(keyword => 
+                        nombre.includes(keyword) || descripcion.includes(keyword) || categoria.includes(keyword)
+                    );
+                    
+                    const esRelaciones = relacionesKeywords.some(keyword => 
+                        nombre.includes(keyword) || descripcion.includes(keyword) || categoria.includes(keyword)
+                    );
+                    
+                    const esProductividad = productividadKeywords.some(keyword => 
+                        nombre.includes(keyword) || descripcion.includes(keyword) || categoria.includes(keyword)
                     );
                     
                     if (esEjercicio) {
-                        return '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>';
+                        return '<lottie-player src="/animations/run.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
+                    } else if (esAgua) {
+                        return '<lottie-player src="/animations/water.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
+                    } else if (esSalud) {
+                        return '<lottie-player src="/animations/health.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
+                    } else if (esMeditacion) {
+                        return '<lottie-player src="/animations/meditation.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
+                    } else if (esLectura) {
+                        return '<lottie-player src="/animations/learning.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
+                    } else if (esFinanzas) {
+                        return '<lottie-player src="/animations/finances.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
+                    } else if (esRelaciones) {
+                        return '<lottie-player src="/animations/relationships.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
+                    } else if (esProductividad) {
+                        return '<lottie-player src="/animations/productivity.json" background="transparent" speed="1" style="width: 64px; height: 64px;" loop autoplay></lottie-player>';
                     }
                     
+                    // Si no encuentra coincidencias específicas, usa el icono de categoría
                     return this.getCategoryIcon(categoria);
                 },
 

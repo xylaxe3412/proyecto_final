@@ -19,6 +19,8 @@
         "vite": "^6.2.4"
     },
     "dependencies": {
-        "firebase": "^11.9.1"
+        "@lottiefiles/lottie-player": "^2.0.12",
+        "firebase": "^11.9.1",
+        "lottie-web": "^5.13.0"
     }
 }

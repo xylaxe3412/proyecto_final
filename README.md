@@ -898,80 +898,11 @@ SOFTWARE.
 - **Catdad** por la librería Canvas Confetti
 - **Comunidad Open Source** por la inspiración y recursos
 
-## 🔧 Instalación Rápida
-
-### Método 1: Script Automático (Recomendado)
-
-**Windows:**
-```powershell
-# Ejecutar PowerShell como administrador
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-.\setup.ps1
-```
-
-**Linux/macOS:**
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-### Método 2: Instalación Manual
-
-Consulta [INSTALLATION.md](INSTALLATION.md) para instrucciones detalladas paso a paso.
-
-## 🆘 Solución de Problemas Comunes
-
-### Error al clonar desde GitHub en otro PC
-
-Si experimentas errores con los modelos o la base de datos al descargar el proyecto:
-
-1. **Configurar el entorno correctamente:**
-```bash
-# Copiar configuración de ejemplo
-cp .env.example .env
-
-# Generar clave de aplicación
-php artisan key:generate
-```
-
-2. **Problema con base de datos:**
-```bash
-# Para SQLite (más fácil)
-touch database/database.sqlite
-php artisan migrate --seed
-
-# Para MySQL
-mysql -u root -p
-CREATE DATABASE proyecto_final;
-exit
-php artisan migrate --seed
-```
-
-3. **Error "Clase no encontrada":**
-```bash
-composer dump-autoload
-php artisan config:clear
-php artisan cache:clear
-```
-
-4. **Verificar la instalación:**
-   - Visita: `http://localhost:8000/debug/habits` (después de login)
-   - Esta ruta proporciona información detallada sobre posibles problemas
-
-### Errores Comunes y Soluciones
-
-| Error | Solución |
-|-------|----------|
-| `Base64 decoder invalid` | Ejecutar `php artisan key:generate` |
-| `Database not found` | Verificar configuración en `.env` |
-| `Class not found` | Ejecutar `composer dump-autoload` |
-| `Permission denied` | Configurar permisos: `chmod -R 775 storage bootstrap/cache` |
-| `Assets not found` | Ejecutar `npm install && npm run build` |
-
 ---
 
 **¡Comienza tu viaje hacia mejores hábitos hoy! 🚀**
 
 *Motiveo - Donde cada día cuenta hacia tus objetivos*
+
 
 Este proyecto está licenciado bajo la [MIT License](https://opensource.org/licenses/MIT).
