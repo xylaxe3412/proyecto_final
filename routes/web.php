@@ -204,23 +204,61 @@ Route::post('/login-google', function (Request $request) {
 
 // Ruta de depuración temporal para verificar hábitos
 Route::get('/debug/habits', function() {
-    if (!auth()->check()) {
-        return response()->json(['error' => 'No autenticado']);
+    try {
+        if (!auth()->check()) {
+            return response()->json([
+                'error' => 'No autenticado',
+                'message' => 'Debes iniciar sesión para acceder a esta ruta',
+                'redirect' => route('login')
+            ], 401);
+        }
+        
+        $user = auth()->user();
+        $habits = \App\Models\Habit::where('user_id', $user->id)->get();
+        
+        return response()->json([
+            'status' => 'success',
+            'user_info' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'level' => $user->level ?? 1,
+                'xp' => $user->xp ?? 0,
+            ],
+            'database_info' => [
+                'connection' => config('database.default'),
+                'habits_table_exists' => \Schema::hasTable('habits'),
+                'users_table_exists' => \Schema::hasTable('users'),
+            ],
+            'habits_data' => [
+                'total_habits' => $habits->count(),
+                'active_habits' => $habits->where('is_active', true)->count(),
+                'habits' => $habits->map(function($habit) {
+                    return [
+                        'id' => $habit->id,
+                        'nombre' => $habit->nombre,
+                        'categoria' => $habit->categoria ?? 'Sin categoría',
+                        'is_active' => $habit->is_active,
+                        'created_at' => $habit->created_at?->format('Y-m-d H:i:s'),
+                        'updated_at' => $habit->updated_at?->format('Y-m-d H:i:s'),
+                    ];
+                })
+            ],
+            'suggestions_info' => [
+                'total_suggestions' => \App\Models\HabitSuggestion::count(),
+                'popular_suggestions' => \App\Models\HabitSuggestion::popular(5)->pluck('name')
+            ]
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Error interno del servidor',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Activar APP_DEBUG para ver detalles'
+        ], 500);
     }
-    
-    $habits = \App\Models\Habit::where('user_id', auth()->id())->get();
-    return response()->json([
-        'user_id' => auth()->id(),
-        'total_habits' => $habits->count(),
-        'habits' => $habits->map(function($habit) {
-            return [
-                'id' => $habit->id,
-                'nombre' => $habit->nombre,
-                'is_active' => $habit->is_active,
-                'created_at' => $habit->created_at,
-            ];
-        })
-    ]);
 })->middleware('auth');
 
 require __DIR__.'/auth.php';
