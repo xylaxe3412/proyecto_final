@@ -15,6 +15,7 @@ use App\Http\Controllers\FormularioHabitoController;
 use App\Http\Controllers\PreguntasFormController;
 use App\Http\Controllers\HabitController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\SuggestionsController;
 
 Route::middleware(['auth'])->group(function () {
     // —————— Ruta de debug temporal ——————
@@ -70,7 +71,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('habits.createFromSuggestion');
     Route::get('/api/user-habits', [HabitController::class, 'getUserHabits'])
         ->name('api.userHabits');
-    Route::get('/api/suggestions', [HabitController::class, 'getSuggestions'])
+    Route::get('/api/suggestions', [SuggestionsController::class, 'getSuggestions'])
         ->name('api.suggestions');
 
     // —————— Quiz de Hábitos ——————

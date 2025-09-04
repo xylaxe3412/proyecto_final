@@ -458,10 +458,13 @@
                                    transition-all duration-300 transform hover:scale-105 hover:shadow-lg group">
                         <i class="fas fa-search mr-2 group-hover:animate-pulse"></i>Explorar Todos ({{ $totalHabits ?? 55 }})
                     </button>
-                    <button @click="loadSuggestions()" 
+                    <button @click="refreshData()" 
+                            :disabled="isRefreshing"
                             class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 
-                                   transition-all duration-300 transform hover:scale-105 group">
-                        <i class="fas fa-refresh mr-2 group-hover:animate-spin"></i>Actualizar
+                                   transition-all duration-300 transform hover:scale-105 group disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-refresh mr-2 transition-transform duration-300" 
+                           :class="isRefreshing ? 'animate-spin' : 'group-hover:animate-spin'"></i>
+                        <span x-text="isRefreshing ? 'Actualizando...' : 'Actualizar'"></span>
                     </button>
                 </div>
             </div>
@@ -769,289 +772,294 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto"
+         @click.self="showCreateModal = false">
         
-        <div x-show="showCreateModal"
-             x-transition:enter="transition ease-out duration-300 transform"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-200 transform"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95"
-             @click.away="showCreateModal = false"
-             class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            
-            <!-- Header -->
-            <div class="flex items-center justify-between p-8 border-b border-gray-200">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-r from-motiveo-primary to-motiveo-secondary rounded-xl flex items-center justify-center">
-                        <i class="fas fa-magic text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-900">Hábito</h2>
-                        <p class="text-sm text-gray-600" x-text="`Paso ${createForm.step} de 5`"></p>
-                    </div>
-                </div>
-                <button @click="showCreateModal = false" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="px-8 pt-4">
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary h-2 rounded-full transition-all duration-300"
-                         :style="`width: ${(createForm.step / 5) * 100}%`"></div>
-                </div>
-            </div>
-
-            <!-- Form Content -->
-            <form @submit.prevent="submitCreateForm()" class="p-8">
+        <div class="min-h-screen flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+            <div x-show="showCreateModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 @click.away="showCreateModal = false"
+                 class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[85vh] overflow-hidden">
                 
-                <!-- Paso 1: Información Básica -->
-                <div x-show="createForm.step === 1" class="space-y-8">
-                    <div class="text-center mb-8">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Qué hábito quieres desarrollar?</h3>
-                        <p class="text-gray-600">Comencemos con la información básica de tu nuevo hábito.</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del hábito</label>
-                        <input type="text" 
-                               x-model="createForm.name"
-                               placeholder="Ej: Hacer ejercicio, Leer 30 minutos, Meditar..."
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"
-                               required>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                        <textarea x-model="createForm.description"
-                                  placeholder="Describe brevemente en qué consiste este hábito..."
-                                  rows="3"
-                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"></textarea>
-                    </div>
-                </div>
-
-                <!-- Paso 2: Frecuencia y Categoría -->
-                <div x-show="createForm.step === 2" class="space-y-6">
-                    <div class="text-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Con qué frecuencia lo harás?</h3>
-                        <p class="text-gray-600">Elige la frecuencia y categoría que mejor se adapte a tu objetivo.</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">Frecuencia</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.frequency" value="diario" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.frequency === 'diario' ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-calendar-day text-blue-500"></i></div>
-                                        <div class="font-semibold">Diario</div>
-                                        <div class="text-sm text-gray-600">Todos los días</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.frequency" value="semanal" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.frequency === 'semanal' ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-chart-bar text-purple-500"></i></div>
-                                        <div class="font-semibold">Semanal</div>
-                                        <div class="text-sm text-gray-600">Una vez por semana</div>
-                                    </div>
-                                </div>
-                            </label>
+                <!-- Header -->
+                <div class="flex items-center justify-between p-8 border-b border-gray-200">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-motiveo-primary to-motiveo-secondary rounded-xl flex items-center justify-center">
+                            <i class="fas fa-magic text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Hábito</h2>
+                            <p class="text-sm text-gray-600" x-text="`Paso ${createForm.step} de 5`"></p>
                         </div>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">Categoría</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.category" value="salud" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.category === 'salud' ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-heartbeat text-red-500"></i></div>
-                                        <div class="font-semibold">Salud</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.category" value="productividad" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.category === 'productividad' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-briefcase text-blue-500"></i></div>
-                                        <div class="font-semibold">Productividad</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.category" value="bienestar" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.category === 'bienestar' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-smile text-yellow-500"></i></div>
-                                        <div class="font-semibold">Bienestar</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.category" value="aprendizaje" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.category === 'aprendizaje' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-book text-green-500"></i></div>
-                                        <div class="font-semibold">Aprendizaje</div>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">Duración</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.duration_days" value="21" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.duration_days === 21 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-clock text-orange-500"></i></div>
-                                        <div class="font-semibold">21 días</div>
-                                        <div class="text-sm text-gray-600">Rápido</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.duration_days" value="30" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.duration_days === 30 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-calendar-alt text-green-500"></i></div>
-                                        <div class="font-semibold">30 días</div>
-                                        <div class="text-sm text-gray-600">Recomendado</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.duration_days" value="60" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.duration_days === 60 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-bullseye text-purple-500"></i></div>
-                                        <div class="font-semibold">60 días</div>
-                                        <div class="text-sm text-gray-600">Desafío</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" x-model="createForm.duration_days" value="90" class="sr-only">
-                                <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
-                                     :class="createForm.duration_days === 90 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
-                                    <div class="text-center">
-                                        <div class="text-2xl mb-2"><i class="fas fa-trophy text-yellow-500"></i></div>
-                                        <div class="font-semibold">90 días</div>
-                                        <div class="text-sm text-gray-600">Experto</div>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Paso 3: Motivación -->
-                <div x-show="createForm.step === 3" class="space-y-6">
-                    <div class="text-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Qué te motiva a crear este hábito?</h3>
-                        <p class="text-gray-600">Entender tu motivación te ayudará a mantener la constancia.</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tu motivación</label>
-                        <textarea x-model="createForm.motivation"
-                                  placeholder="Ej: Quiero sentirme más saludable, mejorar mi concentración, desarrollar una nueva habilidad..."
-                                  rows="4"
-                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"
-                                  required></textarea>
-                    </div>
-                </div>
-
-                <!-- Paso 4: Recompensa -->
-                <div x-show="createForm.step === 4" class="space-y-6">
-                    <div class="text-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Cómo te recompensarás?</h3>
-                        <p class="text-gray-600">Una recompensa personal te ayudará a mantener la motivación.</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tu recompensa</label>
-                        <textarea x-model="createForm.reward"
-                                  placeholder="Ej: Ver una película, comprar algo especial, salir con amigos, un día de descanso..."
-                                  rows="4"
-                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"></textarea>
-                    </div>
-                </div>
-
-                <!-- Paso 5: Fecha de inicio -->
-                <div x-show="createForm.step === 5" class="space-y-6">
-                    <div class="text-center mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Cuándo empezarás?</h3>
-                        <p class="text-gray-600">Elige una fecha para comenzar tu nuevo hábito.</p>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de inicio</label>
-                        <input type="date" 
-                               x-model="createForm.start_date"
-                               :min="new Date().toISOString().split('T')[0]"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"
-                               required>
-                    </div>
-
-                    <!-- Resumen -->
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h4 class="font-semibold text-gray-900 mb-3">Resumen de tu hábito:</h4>
-                        <div class="space-y-2 text-sm">
-                            <p><span class="font-medium">Nombre:</span> <span x-text="createForm.name"></span></p>
-                            <p><span class="font-medium">Frecuencia:</span> <span x-text="createForm.frequency"></span></p>
-                            <p><span class="font-medium">Categoría:</span> <span x-text="createForm.category"></span></p>
-                            <p><span class="font-medium">Inicio:</span> <span x-text="createForm.start_date"></span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Navigation Buttons -->
-                <div class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
-                    <button type="button" 
-                            @click="createForm.step > 1 ? createForm.step-- : (showCreateModal = false)"
-                            class="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium">
-                        <span x-text="createForm.step > 1 ? 'Anterior' : 'Cancelar'"></span>
+                    <button @click="showCreateModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
-                    
-                    <div class="flex space-x-3">
-                        <button type="button" 
-                                x-show="createForm.step < 5"
-                                @click="nextStep()"
-                                class="px-6 py-2 bg-motiveo-primary text-white rounded-lg hover:bg-motiveo-primary/90 font-medium">
-                            Siguiente
-                        </button>
-                        
-                        <button type="submit" 
-                                x-show="createForm.step === 5"
-                                class="px-6 py-2 bg-gradient-to-r from-motiveo-success to-emerald-500 text-white rounded-lg hover:shadow-lg font-medium">
-                            <i class="fas fa-rocket mr-1"></i>Crear Hábito
-                        </button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="px-8 pt-4">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-motiveo-primary to-motiveo-secondary h-2 rounded-full transition-all duration-300"
+                             :style="`width: ${(createForm.step / 5) * 100}%`"></div>
                     </div>
                 </div>
-            </form>
+
+                <!-- Form Content -->
+                <div class="overflow-y-auto" style="max-height: calc(85vh - 140px);">
+                    <form @submit.prevent="submitCreateForm()" class="p-8">
+                        
+                        <!-- Paso 1: Información Básica -->
+                        <div x-show="createForm.step === 1" class="space-y-8">
+                            <div class="text-center mb-8">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Qué hábito quieres desarrollar?</h3>
+                                <p class="text-gray-600">Comencemos con la información básica de tu nuevo hábito.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del hábito</label>
+                                <input type="text" 
+                                       x-model="createForm.name"
+                                       placeholder="Ej: Hacer ejercicio, Leer 30 minutos, Meditar..."
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"
+                                       required>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                                <textarea x-model="createForm.description"
+                                          placeholder="Describe brevemente en qué consiste este hábito..."
+                                          rows="3"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Paso 2: Frecuencia y Categoría -->
+                        <div x-show="createForm.step === 2" class="space-y-6">
+                            <div class="text-center mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Con qué frecuencia lo harás?</h3>
+                                <p class="text-gray-600">Elige la frecuencia y categoría que mejor se adapte a tu objetivo.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Frecuencia</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.frequency" value="diario" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.frequency === 'diario' ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-calendar-day text-blue-500"></i></div>
+                                                <div class="font-semibold">Diario</div>
+                                                <div class="text-sm text-gray-600">Todos los días</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.frequency" value="semanal" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.frequency === 'semanal' ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-chart-bar text-purple-500"></i></div>
+                                                <div class="font-semibold">Semanal</div>
+                                                <div class="text-sm text-gray-600">Una vez por semana</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Categoría</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.category" value="salud" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.category === 'salud' ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-heartbeat text-red-500"></i></div>
+                                                <div class="font-semibold">Salud</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.category" value="productividad" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.category === 'productividad' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-briefcase text-blue-500"></i></div>
+                                                <div class="font-semibold">Productividad</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.category" value="bienestar" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.category === 'bienestar' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-smile text-yellow-500"></i></div>
+                                                <div class="font-semibold">Bienestar</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.category" value="aprendizaje" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.category === 'aprendizaje' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-book text-green-500"></i></div>
+                                                <div class="font-semibold">Aprendizaje</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">Duración</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.duration_days" value="21" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.duration_days === 21 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-clock text-orange-500"></i></div>
+                                                <div class="font-semibold">21 días</div>
+                                                <div class="text-sm text-gray-600">Rápido</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.duration_days" value="30" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.duration_days === 30 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-calendar-alt text-green-500"></i></div>
+                                                <div class="font-semibold">30 días</div>
+                                                <div class="text-sm text-gray-600">Recomendado</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.duration_days" value="60" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.duration_days === 60 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-bullseye text-purple-500"></i></div>
+                                                <div class="font-semibold">60 días</div>
+                                                <div class="text-sm text-gray-600">Desafío</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" x-model="createForm.duration_days" value="90" class="sr-only">
+                                        <div class="w-full p-4 border-2 rounded-lg cursor-pointer transition-all"
+                                             :class="createForm.duration_days === 90 ? 'border-motiveo-primary bg-motiveo-primary/5' : 'border-gray-200 hover:border-gray-300'">
+                                            <div class="text-center">
+                                                <div class="text-2xl mb-2"><i class="fas fa-trophy text-yellow-500"></i></div>
+                                                <div class="font-semibold">90 días</div>
+                                                <div class="text-sm text-gray-600">Experto</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 3: Motivación -->
+                        <div x-show="createForm.step === 3" class="space-y-6">
+                            <div class="text-center mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Qué te motiva a crear este hábito?</h3>
+                                <p class="text-gray-600">Entender tu motivación te ayudará a mantener la constancia.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tu motivación</label>
+                                <textarea x-model="createForm.motivation"
+                                          placeholder="Ej: Quiero sentirme más saludable, mejorar mi concentración, desarrollar una nueva habilidad..."
+                                          rows="4"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"
+                                          required></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Paso 4: Recompensa -->
+                        <div x-show="createForm.step === 4" class="space-y-6">
+                            <div class="text-center mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Cómo te recompensarás?</h3>
+                                <p class="text-gray-600">Una recompensa personal te ayudará a mantener la motivación.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tu recompensa</label>
+                                <textarea x-model="createForm.reward"
+                                          placeholder="Ej: Ver una película, comprar algo especial, salir con amigos, un día de descanso..."
+                                          rows="4"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Paso 5: Fecha de inicio -->
+                        <div x-show="createForm.step === 5" class="space-y-6">
+                            <div class="text-center mb-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">¿Cuándo empezarás?</h3>
+                                <p class="text-gray-600">Elige una fecha para comenzar tu nuevo hábito.</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de inicio</label>
+                                <input type="date" 
+                                       x-model="createForm.start_date"
+                                       :min="new Date().toISOString().split('T')[0]"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-motiveo-primary focus:border-motiveo-primary"
+                                       required>
+                            </div>
+
+                            <!-- Resumen -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="font-semibold text-gray-900 mb-3">Resumen de tu hábito:</h4>
+                                <div class="space-y-2 text-sm">
+                                    <p><span class="font-medium">Nombre:</span> <span x-text="createForm.name"></span></p>
+                                    <p><span class="font-medium">Frecuencia:</span> <span x-text="createForm.frequency"></span></p>
+                                    <p><span class="font-medium">Categoría:</span> <span x-text="createForm.category"></span></p>
+                                    <p><span class="font-medium">Inicio:</span> <span x-text="createForm.start_date"></span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+                            <button type="button" 
+                                    @click="createForm.step > 1 ? createForm.step-- : (showCreateModal = false)"
+                                    class="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium">
+                                <span x-text="createForm.step > 1 ? 'Anterior' : 'Cancelar'"></span>
+                            </button>
+                            
+                            <div class="flex space-x-3">
+                                <button type="button" 
+                                        x-show="createForm.step < 5"
+                                        @click="nextStep()"
+                                        class="px-6 py-2 bg-motiveo-primary text-white rounded-lg hover:bg-motiveo-primary/90 font-medium">
+                                    Siguiente
+                                </button>
+                                
+                                <button type="submit" 
+                                        x-show="createForm.step === 5"
+                                        class="px-6 py-2 bg-gradient-to-r from-motiveo-success to-emerald-500 text-white rounded-lg hover:shadow-lg font-medium">
+                                    <i class="fas fa-rocket mr-1"></i>Crear Hábito
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1073,8 +1081,9 @@
              x-transition:leave="transition ease-in duration-200 transform"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95"
+             @click.away="showEditModal = false"
              class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-             @click.away="showEditModal = false">
+             @click.stop>
             
             <form @submit.prevent="updateHabit()" class="p-8">
                 <!-- Header -->
@@ -1316,271 +1325,266 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto"
+         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
          @click.self="showHabitExplorer = false">
 
         <div x-show="showHabitExplorer"
              x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
              x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-             x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-             class="min-h-screen flex items-start justify-center p-4 pt-8">
-
-            <div class="bg-gradient-to-br from-motiveo-dark/95 to-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-6xl border border-white/10"
-                 @click.stop>
-                <!-- Header -->
-                <div class="flex items-center justify-between p-6 border-b border-white/10">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">Explorador de Hábitos</h2>
-                        <p class="text-white/60 mt-1">Descubre más de 50 hábitos organizados por categorías</p>
-                    </div>
-                    <button @click.stop="showHabitExplorer = false" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="bg-gradient-to-br from-motiveo-dark/95 to-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-6xl max-h-[85vh] border border-white/10 overflow-hidden"
+             @click.stop>
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-white/10">
+                <div>
+                    <h2 class="text-2xl font-bold text-white">Explorador de Hábitos</h2>
+                    <p class="text-white/60 mt-1">Descubre más de 50 hábitos organizados por categorías</p>
                 </div>
+                <button @click.stop="showHabitExplorer = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
 
-                <!-- Filters and Search -->
-                <div class="p-6 border-b border-white/10">
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <!-- Search Bar -->
-                        <div class="flex-1">
-                            <div class="relative">
-                                <input x-model="explorerFilters.search" 
-                                       @input="searchHabits()"
-                                       @click.stop
-                                       type="text" 
-                                       placeholder="Buscar hábitos..." 
-                                       class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-motiveo-primary">
-                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50"></i>
-                            </div>
-                        </div>
-
-                        <!-- Category Filter -->
-                        <div class="md:w-48 relative" x-data="{ isOpen: false }">
-                            <button @click="isOpen = !isOpen" 
-                                    @click.stop
-                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer flex items-center justify-between">
-                                <span x-show="explorerFilters.category === 'all'" class="flex items-center">
-                                    <i class="fas fa-star mr-2"></i>Todas las categorías
-                                </span>
-                                <span x-show="explorerFilters.category === 'salud'" class="flex items-center">
-                                    <i class="fas fa-heartbeat mr-2"></i>Salud
-                                </span>
-                                <span x-show="explorerFilters.category === 'productividad'" class="flex items-center">
-                                    <i class="fas fa-briefcase mr-2"></i>Productividad
-                                </span>
-                                <span x-show="explorerFilters.category === 'bienestar'" class="flex items-center">
-                                    <i class="fas fa-smile mr-2"></i>Bienestar
-                                </span>
-                                <span x-show="explorerFilters.category === 'aprendizaje'" class="flex items-center">
-                                    <i class="fas fa-book mr-2"></i>Aprendizaje
-                                </span>
-                                <span x-show="explorerFilters.category === 'finanzas'" class="flex items-center">
-                                    <i class="fas fa-dollar-sign mr-2"></i>Finanzas
-                                </span>
-                                <span x-show="explorerFilters.category === 'relaciones'" class="flex items-center">
-                                    <i class="fas fa-heart mr-2"></i>Relaciones
-                                </span>
-                                <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            
-                            <!-- Dropdown Menu -->
-                            <div x-show="isOpen" 
-                                 @click.away="isOpen = false"
-                                 x-transition:enter="transition ease-out duration-100"
-                                 x-transition:enter-start="transform opacity-0 scale-95"
-                                 x-transition:enter-end="transform opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-75"
-                                 x-transition:leave-start="transform opacity-100 scale-100"
-                                 x-transition:leave-end="transform opacity-0 scale-95"
-                                 class="absolute z-50 w-full mt-1 bg-gray-800 border border-white/20 rounded-xl shadow-lg max-h-60 overflow-auto">
-                                <button @click="explorerFilters.category = 'all'; searchHabits(); isOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-star mr-2"></i>Todas las categorías
-                                </button>
-                                <button @click="explorerFilters.category = 'salud'; searchHabits(); isOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-heartbeat mr-2"></i>Salud
-                                </button>
-                                <button @click="explorerFilters.category = 'productividad'; searchHabits(); isOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-briefcase mr-2"></i>Productividad
-                                </button>
-                                <button @click="explorerFilters.category = 'bienestar'; searchHabits(); isOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-smile mr-2"></i>Bienestar
-                                </button>
-                                <button @click="explorerFilters.category = 'aprendizaje'; searchHabits(); isOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-book mr-2"></i>Aprendizaje
-                                </button>
-                                <button @click="explorerFilters.category = 'finanzas'; searchHabits(); isOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-dollar-sign mr-2"></i>Finanzas
-                                </button>
-                                <button @click="explorerFilters.category = 'relaciones'; searchHabits(); isOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-heart mr-2"></i>Relaciones
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Sort Options -->
-                        <div class="md:w-48 relative" x-data="{ isSortOpen: false }">
-                            <button @click="isSortOpen = !isSortOpen" 
-                                    @click.stop
-                                    class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer flex items-center justify-between">
-                                <span x-show="explorerFilters.sort === 'popularity'" class="flex items-center">
-                                    <i class="fas fa-star mr-2"></i>Más populares
-                                </span>
-                                <span x-show="explorerFilters.sort === 'name'" class="flex items-center">
-                                    <i class="fas fa-sort-alpha-down mr-2"></i>Alfabético
-                                </span>
-                                <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            
-                            <!-- Sort Dropdown Menu -->
-                            <div x-show="isSortOpen" 
-                                 @click.away="isSortOpen = false"
-                                 x-transition:enter="transition ease-out duration-100"
-                                 x-transition:enter-start="transform opacity-0 scale-95"
-                                 x-transition:enter-end="transform opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-75"
-                                 x-transition:leave-start="transform opacity-100 scale-100"
-                                 x-transition:leave-end="transform opacity-0 scale-95"
-                                 class="absolute z-50 w-full mt-1 bg-gray-800 border border-white/20 rounded-xl shadow-lg">
-                                <button @click="explorerFilters.sort = 'popularity'; searchHabits(); isSortOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-star mr-2"></i>Más populares
-                                </button>
-                                <button @click="explorerFilters.sort = 'name'; searchHabits(); isSortOpen = false" 
-                                        class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
-                                    <i class="fas fa-sort-alpha-down mr-2"></i>Alfabético
-                                </button>
-                            </div>
+            <!-- Filters and Search -->
+            <div class="p-6 border-b border-white/10">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- Search Bar -->
+                    <div class="flex-1">
+                        <div class="relative">
+                            <input x-model="explorerFilters.search" 
+                                   @input="searchHabits()"
+                                   @click.stop
+                                   type="text" 
+                                   placeholder="Buscar hábitos..." 
+                                   class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-motiveo-primary">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50"></i>
                         </div>
                     </div>
 
-                    <!-- Quick Category Filters -->
-                    <div class="flex flex-wrap gap-2 mt-4">
-                        <template x-for="category in explorerCategories" :key="category.key">
-                            <button @click.stop="explorerFilters.category = category.key; searchHabits()"
-                                    :class="explorerFilters.category === category.key ? 'bg-motiveo-primary text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'"
-                                    class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                                    x-html="category.label">
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Results -->
-                <div class="p-6 max-h-96 overflow-y-auto">
-                    <!-- Loading State -->
-                    <div x-show="explorerLoading" class="text-center py-8">
-                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-motiveo-primary"></div>
-                        <p class="text-white/60 mt-2">Cargando hábitos...</p>
-                    </div>
-
-                    <!-- Results Count -->
-                    <div x-show="!explorerLoading && explorerHabits.length > 0" class="mb-4">
-                        <p class="text-white/70 text-sm">
-                            <span x-text="explorerHabits.length"></span> hábitos encontrados
-                        </p>
-                    </div>
-
-                    <!-- Habits Grid -->
-                    <div x-show="!explorerLoading && explorerHabits.length > 0" 
-                         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <template x-for="habit in explorerHabits" :key="habit.id">
-                            <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all group">
-                                <!-- Habit Header -->
-                                <div class="flex items-start justify-between mb-3">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="text-2xl" x-html="habit.icon || getHabitIcon(habit)"></div>
-                                        <div>
-                                            <h3 class="text-white font-semibold text-sm line-clamp-1" x-text="habit.name"></h3>
-                                            <span class="text-xs px-2 py-1 rounded-full capitalize"
-                                                  :class="getCategoryStyle(habit.categoria)"
-                                                  x-text="habit.categoria">
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="text-xs text-white/50">
-                                        <i class="fas fa-users mr-1"></i> <span x-text="habit.popularity"></span>
-                                    </div>
-                                </div>
-
-                                <!-- Description -->
-                                <p class="text-white/70 text-xs mb-3 line-clamp-2" x-text="habit.description"></p>
-
-                                <!-- Benefits -->
-                                <div x-show="habit.benefits" class="mb-3">
-                                    <p class="text-white/60 text-xs">
-                                        <span class="text-motiveo-success"><i class="fas fa-sparkles mr-1"></i>Beneficios:</span>
-                                        <span class="line-clamp-1" x-text="habit.benefits"></span>
-                                    </p>
-                                </div>
-
-                                <!-- Steps Preview -->
-                                <div x-show="habit.steps && habit.steps.length > 0" class="mb-3">
-                                    <p class="text-white/60 text-xs mb-1">
-                                        <span class="text-motiveo-accent"><i class="fas fa-list-ul mr-1"></i>Pasos:</span>
-                                    </p>
-                                    <ul class="text-xs text-white/50 space-y-1">
-                                        <template x-for="(step, index) in habit.steps.slice(0, 2)" :key="index">
-                                            <li class="flex items-start space-x-2">
-                                                <span class="text-motiveo-accent mt-0.5"><i class="fas fa-circle text-xs"></i></span>
-                                                <span class="line-clamp-1" x-text="step"></span>
-                                            </li>
-                                        </template>
-                                        <li x-show="habit.steps.length > 2" class="text-motiveo-primary text-xs">
-                                            +<span x-text="habit.steps.length - 2"></span> pasos más...
-                                        </li>
-                                    </ul>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex space-x-2 mt-3">
-                                    <button @click.stop="adoptSuggestionFromExplorer(habit)"
-                                            class="flex-1 bg-motiveo-primary/20 hover:bg-motiveo-primary text-motiveo-primary hover:text-white py-2 px-3 rounded-lg text-xs font-medium transition-all group-hover:bg-motiveo-primary group-hover:text-white">
-                                        <i class="fas fa-plus mr-1"></i>Agregar Hábito
-                                    </button>
-                                    <button @click.stop="showHabitDetails(habit)"
-                                            class="bg-white/10 hover:bg-white/20 text-white py-2 px-3 rounded-lg text-xs font-medium transition-all">
-                                        <i class="fas fa-eye mr-1"></i>Ver
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- No Results -->
-                    <div x-show="!explorerLoading && explorerHabits.length === 0" class="text-center py-8">
-                        <div class="text-6xl mb-4"><i class="fas fa-search text-blue-500"></i></div>
-                        <h3 class="text-white font-semibold mb-2">No se encontraron hábitos</h3>
-                        <p class="text-white/60 text-sm">
-                            Intenta cambiar los filtros o términos de búsqueda.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="p-6 border-t border-white/10 bg-white/5">
-                    <div class="flex justify-between items-center">
-                        <p class="text-white/60 text-sm">
-                            <i class="fas fa-lightbulb mr-2"></i>Explora diferentes categorías para encontrar hábitos que se adapten a tus objetivos
-                        </p>
-                        <button @click.stop="showHabitExplorer = false"
-                                class="bg-motiveo-primary hover:bg-motiveo-primary/80 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
-                            Cerrar
+                    <!-- Category Filter -->
+                    <div class="md:w-48 relative" x-data="{ isOpen: false }">
+                        <button @click="isOpen = !isOpen" 
+                                @click.stop
+                                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer flex items-center justify-between">
+                            <span x-show="explorerFilters.category === 'all'" class="flex items-center">
+                                <i class="fas fa-star mr-2"></i>Todas las categorías
+                            </span>
+                            <span x-show="explorerFilters.category === 'salud'" class="flex items-center">
+                                <i class="fas fa-heartbeat mr-2"></i>Salud
+                            </span>
+                            <span x-show="explorerFilters.category === 'productividad'" class="flex items-center">
+                                <i class="fas fa-briefcase mr-2"></i>Productividad
+                            </span>
+                            <span x-show="explorerFilters.category === 'bienestar'" class="flex items-center">
+                                <i class="fas fa-smile mr-2"></i>Bienestar
+                            </span>
+                            <span x-show="explorerFilters.category === 'aprendizaje'" class="flex items-center">
+                                <i class="fas fa-book mr-2"></i>Aprendizaje
+                            </span>
+                            <span x-show="explorerFilters.category === 'finanzas'" class="flex items-center">
+                                <i class="fas fa-dollar-sign mr-2"></i>Finanzas
+                            </span>
+                            <span x-show="explorerFilters.category === 'relaciones'" class="flex items-center">
+                                <i class="fas fa-heart mr-2"></i>Relaciones
+                            </span>
+                            <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
                         </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div x-show="isOpen" 
+                             @click.away="isOpen = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute z-50 w-full mt-1 bg-gray-800 border border-white/20 rounded-xl shadow-lg max-h-60 overflow-auto">
+                            <button @click="explorerFilters.category = 'all'; searchHabits(); isOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-star mr-2"></i>Todas las categorías
+                            </button>
+                            <button @click="explorerFilters.category = 'salud'; searchHabits(); isOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-heartbeat mr-2"></i>Salud
+                            </button>
+                            <button @click="explorerFilters.category = 'productividad'; searchHabits(); isOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-briefcase mr-2"></i>Productividad
+                            </button>
+                            <button @click="explorerFilters.category = 'bienestar'; searchHabits(); isOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-smile mr-2"></i>Bienestar
+                            </button>
+                            <button @click="explorerFilters.category = 'aprendizaje'; searchHabits(); isOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-book mr-2"></i>Aprendizaje
+                            </button>
+                            <button @click="explorerFilters.category = 'finanzas'; searchHabits(); isOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-dollar-sign mr-2"></i>Finanzas
+                            </button>
+                            <button @click="explorerFilters.category = 'relaciones'; searchHabits(); isOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-heart mr-2"></i>Relaciones
+                            </button>
+                        </div>
                     </div>
+
+                    <!-- Sort Options -->
+                    <div class="md:w-48 relative" x-data="{ isSortOpen: false }">
+                        <button @click="isSortOpen = !isSortOpen" 
+                                @click.stop
+                                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-motiveo-primary appearance-none cursor-pointer flex items-center justify-between">
+                            <span x-show="explorerFilters.sort === 'popularity'" class="flex items-center">
+                                <i class="fas fa-star mr-2"></i>Más populares
+                            </span>
+                            <span x-show="explorerFilters.sort === 'name'" class="flex items-center">
+                                <i class="fas fa-sort-alpha-down mr-2"></i>Alfabético
+                            </span>
+                            <svg class="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Sort Dropdown Menu -->
+                        <div x-show="isSortOpen" 
+                             @click.away="isSortOpen = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute z-50 w-full mt-1 bg-gray-800 border border-white/20 rounded-xl shadow-lg">
+                            <button @click="explorerFilters.sort = 'popularity'; searchHabits(); isSortOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-star mr-2"></i>Más populares
+                            </button>
+                            <button @click="explorerFilters.sort = 'name'; searchHabits(); isSortOpen = false" 
+                                    class="w-full text-left px-4 py-3 text-white hover:bg-white/10 flex items-center">
+                                <i class="fas fa-sort-alpha-down mr-2"></i>Alfabético
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Category Filters -->
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <template x-for="category in explorerCategories" :key="category.key">
+                        <button @click.stop="explorerFilters.category = category.key; searchHabits()"
+                                :class="explorerFilters.category === category.key ? 'bg-motiveo-primary text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+                                class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                                x-html="category.label">
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="p-6 overflow-y-auto" style="max-height: calc(85vh - 200px);">
+                <!-- Loading State -->
+                <div x-show="explorerLoading" class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-motiveo-primary"></div>
+                    <p class="text-white/60 mt-2">Cargando hábitos...</p>
+                </div>
+
+                <!-- Results Count -->
+                <div x-show="!explorerLoading && explorerHabits.length > 0" class="mb-4">
+                    <p class="text-white/70 text-sm">
+                        <span x-text="explorerHabits.length"></span> hábitos encontrados
+                    </p>
+                </div>
+
+                <!-- Habits Grid -->
+                <div x-show="!explorerLoading && explorerHabits.length > 0" 
+                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <template x-for="habit in explorerHabits" :key="habit.id">
+                        <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all group">
+                            <!-- Habit Header -->
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-2xl" x-html="habit.icon || getHabitIcon(habit)"></div>
+                                    <div>
+                                        <div class="text-white font-medium" x-text="habit.name"></div>
+                                        <div class="text-white/60 text-xs" x-text="habit.description"></div>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-white/50">
+                                    <i class="fas fa-users mr-1"></i> <span x-text="habit.popularity"></span>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <p class="text-white/70 text-xs mb-3 line-clamp-2" x-text="habit.description"></p>
+
+                            <!-- Benefits -->
+                            <div x-show="habit.benefits" class="mb-3">
+                                <p class="text-white/60 text-xs">
+                                    <span class="text-motiveo-success"><i class="fas fa-sparkles mr-1"></i>Beneficios:</span>
+                                    <span class="line-clamp-1" x-text="habit.benefits"></span>
+                                </p>
+                            </div>
+
+                            <!-- Steps Preview -->
+                            <div x-show="habit.steps && habit.steps.length > 0" class="mb-3">
+                                <p class="text-white/60 text-xs mb-1">
+                                    <span class="text-motiveo-accent"><i class="fas fa-list-ul mr-1"></i>Pasos:</span>
+                                </p>
+                                <ul class="text-xs text-white/50 space-y-1">
+                                    <template x-for="(step, index) in habit.steps.slice(0, 2)" :key="index">
+                                        <li class="flex items-start space-x-2">
+                                            <span class="text-motiveo-accent mt-0.5"><i class="fas fa-circle text-xs"></i></span>
+                                            <span class="line-clamp-1" x-text="step"></span>
+                                        </li>
+                                    </template>
+                                    <li x-show="habit.steps.length > 2" class="text-motiveo-primary text-xs">
+                                        +<span x-text="habit.steps.length - 2"></span> pasos más...
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex space-x-2 mt-3">
+                                <button @click.stop="adoptSuggestionFromExplorer(habit)"
+                                        class="flex-1 bg-motiveo-primary/20 hover:bg-motiveo-primary text-motiveo-primary hover:text-white py-2 px-3 rounded-lg text-xs font-medium transition-all group-hover:bg-motiveo-primary group-hover:text-white">
+                                    <i class="fas fa-plus mr-1"></i>Agregar Hábito
+                                </button>
+                                <button @click.stop="showHabitDetails(habit)"
+                                        class="bg-white/10 hover:bg-white/20 text-white py-2 px-3 rounded-lg text-xs font-medium transition-all">
+                                    <i class="fas fa-eye mr-1"></i>Ver
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- No Results -->
+                <div x-show="!explorerLoading && explorerHabits.length === 0" class="text-center py-8">
+                    <div class="text-6xl mb-4"><i class="fas fa-search text-blue-500"></i></div>
+                    <h3 class="text-white font-semibold mb-2">No se encontraron hábitos</h3>
+                    <p class="text-white/60 text-sm">
+                        Intenta cambiar los filtros o términos de búsqueda.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-white/10 bg-white/5">
+                <div class="flex justify-between items-center">
+                    <p class="text-white/60 text-sm">
+                        <i class="fas fa-lightbulb mr-2"></i>Explora diferentes categorías para encontrar hábitos que se adapten a tus objetivos
+                    </p>
+                    <button @click.stop="showHabitExplorer = false"
+                            class="bg-motiveo-primary hover:bg-motiveo-primary/80 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                        Cerrar
+                    </button>
                 </div>
             </div>
         </div>
@@ -1715,6 +1719,35 @@
                     }
                 },
 
+                async refreshData() {
+                    if (this.isRefreshing) return; // Prevenir múltiples clics
+                    
+                    this.isRefreshing = true;
+                    try {
+                        // Mostrar notificación de inicio
+                        this.showNotification('Actualizando sugerencias...');
+                        
+                        // Cargar nuevas sugerencias aleatorias
+                        const response = await fetch('/api/suggestions?refresh=true&random=' + Math.random());
+                        const newSuggestions = await response.json();
+                        
+                        // Actualizar las sugerencias con las nuevas
+                        this.suggestions = newSuggestions;
+                        
+                        // También recargar hábitos del usuario para actualizar el estado
+                        await this.loadUserHabits();
+                        
+                        // Mostrar notificación de éxito
+                        this.showNotification('¡Nuevas sugerencias cargadas!');
+                        
+                    } catch (error) {
+                        console.error('Error refreshing data:', error);
+                        this.showNotification('Error al actualizar las sugerencias. Inténtalo de nuevo.');
+                    } finally {
+                        this.isRefreshing = false;
+                    }
+                },
+
                 async completeHabit(habit) {
                     try {
                         // Actualizar el estado local inmediatamente para feedback visual
@@ -1822,11 +1855,13 @@
                         if (data.success) {
                             this.showNotification(data.message);
                             
+
                             // Actualizar stats del usuario si están en la respuesta
                             if (data.user_stats) {
                                 this.userStats = data.user_stats;
                             }
                             
+
                             // Verificar level-up y mostrar confetti
                             if (data.leveled_up) {
                                 setTimeout(() => {
@@ -1835,6 +1870,7 @@
                                 }, 500);
                             }
                             
+
                             // Recargar hábitos y sugerencias para actualizar la vista
                             await this.loadUserHabits();
                             await this.loadSuggestions(); // Recargar sugerencias sin duplicados
@@ -1894,11 +1930,13 @@
                             this.showCreateModal = false;
                             this.resetCreateForm();
                             
+
                             // Actualizar stats del usuario si están en la respuesta
                             if (data.user_stats) {
                                 this.userStats = data.user_stats;
                             }
                             
+
                             // Verificar level-up y mostrar confetti
                             if (data.leveled_up) {
                                 setTimeout(() => {
@@ -2499,6 +2537,29 @@
         @keyframes fadeInRight {
             from { transform: translateX(30px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Animaciones de deslizamiento para el explorador de hábitos */
+        @keyframes slideInDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Animaciones de elementos específicos */
