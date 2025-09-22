@@ -39,6 +39,8 @@ Route::middleware(['auth'])->group(function () {
     })->name('habits.interactive');
     Route::get('/habits/data', [HabitController::class, 'getData'])
         ->name('habits.data');
+    Route::get('/habits/dashboard-suggestions', [HabitController::class, 'getSuggestions'])
+        ->name('habits.dashboard-suggestions');
     Route::get('/habits/suggestions', [HabitController::class, 'getAllSuggestions'])
         ->name('habits.suggestions');
     Route::post('/habits/suggestions/{suggestion}/add', [HabitController::class, 'addSuggested'])

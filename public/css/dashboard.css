@@ -1,0 +1,194 @@
+/* Dashboard Styles - Motiveo */
+
+/* Fondo global con degradado morado */
+html, body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 25%, #4c1d95 50%, #6b21a8 75%, #8b5cf6 100%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+/* Estilos para las tarjetas de hábitos */
+.habit-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Estilos para animaciones Lottie */
+lottie-player {
+    display: inline-block;
+    min-width: 64px !important;
+    min-height: 64px !important;
+    transition: transform 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+lottie-player:hover {
+    transform: scale(1.15);
+}
+
+.habit-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+}
+
+/* Hábitos pendientes - Resaltados */
+.habit-pending {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.3));
+    border: 2px solid #f59e0b;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    animation: pulseGlow 2s infinite;
+}
+
+/* Hábitos completados */
+.habit-completed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(34, 197, 94, 0.3));
+    border: 2px solid #10b981;
+    opacity: 0.8;
+}
+
+/* Animación de resaltado para hábitos pendientes */
+@keyframes pulseGlow {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+        border-color: #f59e0b;
+    }
+    50% { 
+        box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+        border-color: #fbbf24;
+    }
+}
+
+/* Vista expandida */
+.habit-expanded {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 900px;
+    height: 90vh;
+    z-index: 1000;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: expandIn 0.3s ease-out;
+}
+
+/* Overlay para vista expandida */
+.habit-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Animaciones */
+@keyframes expandIn {
+    from { 
+        opacity: 0; 
+        transform: translate(-50%, -50%) scale(0.9); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1); 
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Efectos para pasos completados */
+.step-completed {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    border-color: #10b981;
+}
+
+.step-pending {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Botón de doble confirmación */
+.confirm-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.confirm-button.confirming {
+    background: linear-gradient(90deg, #f59e0b 0%, #f59e0b 50%, #10b981 50%, #10b981 100%);
+    animation: confirmProgress 1.5s ease-in-out;
+}
+
+@keyframes confirmProgress {
+    0% { background-position: -100% 0; }
+    100% { background-position: 100% 0; }
+}
+
+/* Estilos específicos para dropdowns/selects */
+select {
+    color-scheme: dark;
+}
+
+select option {
+    background-color: #1f2937 !important;
+    color: white !important;
+    padding: 8px 12px;
+}
+
+select option:checked {
+    background-color: #6366f1 !important;
+    color: white !important;
+}
+
+select option:hover {
+    background-color: #374151 !important;
+    color: white !important;
+}
+
+/* Mejoras específicas para Safari y Chrome */
+select::-webkit-scrollbar {
+    width: 8px;
+}
+
+select::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+select::-webkit-scrollbar-thumb {
+    background: #6366f1;
+    border-radius: 4px;
+}
+
+/* Para Firefox */
+select {
+    scrollbar-width: thin;
+    scrollbar-color: #6366f1 #1f2937;
+}
+
+/* Grid responsivo */
+.habits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .habits-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -128,6 +128,7 @@ class HabitController extends Controller
                     'duration_days' => $habit->duration_days,
                     'completed_today' => true,
                     'today_completed' => true, // Agregar para consistencia frontend
+                    'is_completed' => true,    // ¡CAMPO FALTANTE! Para el texto del botón
                     'status' => 'completed',
                     'progress_percentage' => $habit->getProgressPercentage(),
                     'remaining_days' => $habit->duration_days - $habit->current_day,
@@ -181,7 +182,11 @@ class HabitController extends Controller
                 'habit' => [
                     'id' => $habit->id,
                     'name' => $habit->nombre ?? $habit->name,
+                    'nombre' => $habit->nombre ?? $habit->name,
                     'completed_today' => false,
+                    'today_completed' => false, // Consistencia frontend
+                    'is_completed' => false,    // ¡CAMPO FALTANTE! Para el texto del botón
+                    'status' => 'active',
                     'progress_percentage' => $habit->getProgressPercentage(),
                     'streak' => $habit->dias_racha
                 ],
@@ -356,6 +361,24 @@ class HabitController extends Controller
 
         $suggestion = HabitSuggestion::findOrFail($request->suggestion_id);
         $user = auth()->user();
+        
+        // Verificar si el usuario ya tiene este hábito activo
+        $existingHabit = Habit::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->where(function($query) use ($suggestion) {
+                $query->where('nombre', $suggestion->name)
+                      ->orWhere('name', $suggestion->name);
+            })
+            ->first();
+
+        if ($existingHabit) {
+            return response()->json([
+                'success' => false,
+                'message' => '¡Ya tienes este hábito en tu lista! No puedes agregar hábitos duplicados.',
+                'error_type' => 'duplicate_habit'
+            ], 400);
+        }
+        
         $previousLevel = $user->level;
         $durationDays = $request->duration_days ?? 30;
         $startDate = now();
@@ -517,8 +540,43 @@ class HabitController extends Controller
     /**
      * Obtener sugerencias para API
      */
-    public function getSuggestions()
+    public function getSuggestions(Request $request)
     {
+        $refresh = $request->get('refresh', false);
+        
+        if ($refresh) {
+            // Si se solicita refresh, devolver sugerencias aleatorias
+            $randomSuggestions = HabitSuggestion::inRandomOrder()->take(6)->get()->map(function($suggestion) {
+                return [
+                    'id' => $suggestion->id,
+                    'name' => $suggestion->name,
+                    'description' => $suggestion->description,
+                    'categoria' => $suggestion->categoria,
+                    'icon' => $suggestion->icon,
+                    'benefits' => $suggestion->benefits,
+                    'popularity' => $suggestion->popularity,
+                    'frequency_suggestions' => $suggestion->frequency_suggestions ?? ['diario'],
+                    'type' => 'suggested'
+                ];
+            });
+            
+            // Agrupar por categorías para mantener la estructura esperada
+            $randomByCategory = [];
+            foreach ($randomSuggestions as $suggestion) {
+                $categoria = $suggestion['categoria'];
+                if (!isset($randomByCategory[$categoria])) {
+                    $randomByCategory[$categoria] = [];
+                }
+                $randomByCategory[$categoria][] = $suggestion;
+            }
+            
+            return response()->json([
+                'popular' => $randomSuggestions,
+                'by_category' => $randomByCategory
+            ]);
+        }
+        
+        // Comportamiento normal - obtener más populares
         $popularSuggestions = HabitSuggestion::popular(6)->map(function($suggestion) {
             return [
                 'id' => $suggestion->id,
