@@ -40,7 +40,7 @@
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
             @click.away="showMusicControls = false"
-            class="absolute bottom-16 left-0 bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20 min-w-[350px]"
+            class="absolute bottom-16 left-0 bg-white dark:bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-gray-200 dark:border-white/20 min-w-[350px]"
         >
             <!-- Header del panel -->
             <div class="flex items-center justify-between mb-4">
@@ -49,13 +49,13 @@
                         <i class="fas fa-music text-white"></i>
                     </div>
                     <div>
-                        <h3 class="text-white font-semibold text-lg">Música de Fondo</h3>
-                        <p class="text-white/60 text-sm" x-text="musicInfo.trackName"></p>
+                        <h3 class="text-gray-800 dark:text-white font-semibold text-lg">Música de Fondo</h3>
+                        <p class="text-gray-600 dark:text-white/60 text-sm" x-text="musicInfo.trackName"></p>
                     </div>
                 </div>
                 <button 
                     @click="showMusicControls = false"
-                    class="text-white/60 hover:text-white transition-colors p-1"
+                    class="text-gray-600 hover:text-gray-800 dark:text-white/60 dark:hover:text-white transition-colors p-1"
                 >
                     <i class="fas fa-times"></i>
                 </button>
@@ -63,7 +63,7 @@
 
             <!-- Progreso de la canción -->
             <div class="mb-6">
-                <div class="flex items-center justify-between text-sm text-white/60 mb-2">
+                <div class="flex items-center justify-between text-sm text-gray-600 dark:text-white/60 mb-2">
                     <span x-text="musicInfo.currentTime"></span>
                     <span x-text="musicInfo.duration"></span>
                 </div>
@@ -103,10 +103,10 @@
             </div>
 
             <!-- Toggle activación -->
-            <div class="flex items-center justify-between mb-4 p-3 bg-white/5 rounded-lg">
+            <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
                 <div class="flex items-center">
                     <i class="fas fa-power-off mr-3 text-green-400"></i>
-                    <span class="text-white font-medium">Música Activada</span>
+                    <span class="text-gray-800 dark:text-white font-medium">Música Activada</span>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -121,7 +121,7 @@
 
             <!-- Control de volumen -->
             <div class="mb-4" x-show="musicInfo.isEnabled">
-                <label class="block text-white/80 text-sm font-medium mb-3">
+                <label class="block text-gray-700 dark:text-white/80 text-sm font-medium mb-3">
                     <i class="fas fa-volume-up mr-2"></i>
                     Volumen: <span x-text="Math.round(musicInfo.volume * 100)"></span>%
                 </label>
@@ -132,7 +132,7 @@
                     step="0.05"
                     :value="musicInfo.volume"
                     @input="window.MusicManager && window.MusicManager.setVolume(parseFloat($event.target.value))"
-                    class="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer music-slider"
+                    class="w-full h-2 bg-gray-200 dark:bg-white/20 rounded-lg appearance-none cursor-pointer music-slider"
                 >
             </div>
 
@@ -141,14 +141,14 @@
                 <div class="flex items-center space-x-2 text-sm">
                     <div :class="musicInfo.isPlaying ? 'bg-green-500' : 'bg-gray-500'" 
                          class="w-2 h-2 rounded-full"></div>
-                    <span class="text-white/60" 
+                    <span class="text-gray-600 dark:text-white/60" 
                           x-text="musicInfo.isPlaying ? 'Reproduciendo' : (musicInfo.isEnabled ? 'Pausado' : 'Desactivado')"></span>
                 </div>
             </div>
 
             <!-- Info motivacional -->
-            <div class="mt-4 p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-lg border border-indigo-500/20">
-                <p class="text-white/70 text-xs text-center flex items-center justify-center">
+            <div class="mt-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-500/10 dark:to-purple-500/10 rounded-lg border border-indigo-200 dark:border-indigo-500/20">
+                <p class="text-gray-700 dark:text-white/70 text-xs text-center flex items-center justify-center">
                     <i class="fas fa-lightbulb mr-2 text-yellow-400"></i>
                     La música de fondo mejora tu concentración y hace más placentero construir hábitos
                 </p>

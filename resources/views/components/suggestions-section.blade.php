@@ -2,8 +2,8 @@
 <div class="mt-24 mb-8 mx-4 sm:mx-6 lg:mx-8 animate-slide-up">
     <div class="flex justify-between items-center mb-8">
         <div class="animate-fade-in-left">
-            <h3 class="text-2xl font-bold text-white mb-2 animate-text-shine">Hábitos Sugeridos</h3>
-            <p class="text-white/60 animate-text-shimmer">Descubre nuevos hábitos que podrían interesarte</p>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2 animate-text-shine">Hábitos Sugeridos</h3>
+            <p class="text-gray-600 dark:text-white/60 animate-text-shimmer">Descubre nuevos hábitos que podrían interesarte</p>
         </div>
         <div class="flex space-x-3 animate-fade-in-right-delayed">
             <button @click.stop="openHabitExplorer()" 
@@ -13,7 +13,7 @@
             </button>
             <button @click="refreshData()" 
                     :disabled="isRefreshing"
-                    class="bg-white/10 backdrop-blur-md text-white px-4 py-3 rounded-xl hover:bg-white/20 
+                    class="bg-gray-200 dark:bg-white/10 backdrop-blur-md text-gray-700 dark:text-white px-4 py-3 rounded-xl hover:bg-gray-300 dark:hover:bg-white/20 
                            transition-all duration-300 transform hover:scale-105 group disabled:opacity-50 disabled:cursor-not-allowed">
                 <i class="fas fa-refresh mr-2 transition-transform duration-300" 
                    :class="isRefreshing ? 'animate-spin' : 'group-hover:animate-spin'"></i>
@@ -25,7 +25,7 @@
     <!-- Grid de Sugerencias -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16" x-show="suggestions.popular && suggestions.popular.length > 0">
         <template x-for="(suggestion, index) in suggestions.popular" :key="suggestion.id">
-            <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 
+            <div class="bg-gray-50 dark:bg-white/5 backdrop-blur-md rounded-xl p-4 border border-gray-200 dark:border-white/10 
                        transition-all duration-500 cursor-pointer transform hover:scale-105 hover:-translate-y-2 
                        hover:shadow-xl hover:shadow-motiveo-primary/20 animate-card-appear group"
                  :class="{
@@ -44,12 +44,12 @@
                         <span class="text-lg" x-html="getCategoryIcon(suggestion.categoria)"></span>
                     </div>
                     <div class="transform group-hover:translate-x-1 transition-transform duration-300">
-                        <h4 class="text-white font-semibold text-sm group-hover:text-motiveo-accent transition-colors duration-300" 
+                        <h4 class="text-gray-900 dark:text-white font-semibold text-sm group-hover:text-motiveo-accent transition-colors duration-300" 
                             x-text="suggestion.name"></h4>
-                        <p class="text-white/60 text-xs capitalize animate-text-shimmer" x-text="suggestion.categoria"></p>
+                        <p class="text-gray-600 dark:text-white/60 text-xs capitalize animate-text-shimmer" x-text="suggestion.categoria"></p>
                     </div>
                 </div>
-                <p class="text-white/70 text-xs mb-3 line-clamp-2 group-hover:text-white transition-colors duration-300" 
+                <p class="text-gray-800 dark:text-white/70 text-xs mb-3 line-clamp-2 group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300" 
                    x-text="suggestion.description"></p>
                 <button class="w-full py-2 px-3 rounded-lg text-xs font-medium 
                                transition-all duration-300 transform hover:scale-105 hover:shadow-lg overflow-hidden relative"
@@ -77,10 +77,10 @@
 
     <!-- Categorías de sugerencias -->
     <div class="mt-16 mb-12 animate-slide-up">
-        <h4 class="text-lg font-semibold text-white mb-6 animate-text-glow">Explorar por Categoría</h4>
+        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 animate-text-glow">Explorar por Categoría</h4>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
             <template x-for="([category, habits], index) in Object.entries(suggestions.by_category || {})" :key="category">
-                <div class="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 
+                <div class="bg-gray-50 dark:bg-white/5 backdrop-blur-md rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 
                            transition-all duration-500 cursor-pointer transform hover:scale-105 hover:-translate-y-2 
                            hover:shadow-xl hover:shadow-motiveo-primary/20 animate-card-appear group"
                      :style="`animation-delay: ${index * 0.1}s`"
@@ -94,9 +94,9 @@
                              :class="getCategoryStyle(category)">
                             <span class="text-xl" x-html="getCategoryIcon(category)"></span>
                         </div>
-                        <h5 class="text-white font-medium text-sm capitalize group-hover:text-motiveo-accent 
+                        <h5 class="text-gray-900 dark:text-white font-medium text-sm capitalize group-hover:text-motiveo-accent 
                                   transition-colors duration-300" x-text="category"></h5>
-                        <p class="text-white/60 text-xs animate-number-count" x-text="`${habits.length} hábitos`"></p>
+                        <p class="text-gray-600 dark:text-white/60 text-xs animate-number-count" x-text="`${habits.length} hábitos`"></p>
                     </div>
                 </div>
             </template>

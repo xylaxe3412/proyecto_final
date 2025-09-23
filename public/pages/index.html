@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Usuario - Motiveo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-10px, -10px) rotate(180deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+
+        .step-section:nth-child(even) {
+            background: #f8f9ff;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 20px;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .step-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .step-content {
+            margin-left: 70px;
+        }
+
+        .sub-steps {
+            list-style: none;
+            counter-reset: sub-counter;
+        }
+
+        .sub-steps li {
+            counter-increment: sub-counter;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .expandable-step {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            padding-right: 50px !important;
+        }
+
+        .expandable-step:hover {
+            background: #f8f9ff !important;
+            transform: translateX(5px);
+        }
+
+        .expand-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .expandable-step:hover .expand-icon {
+            opacity: 1;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .image-placeholder {
+            margin-top: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9ff, #e3f2fd);
+            border-radius: 10px;
+            border: 2px dashed #74b9ff;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .image-container {
+            text-align: center;
+        }
+
+        .placeholder-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+
+        .image-placeholder p {
+            margin: 0;
+            color: #666;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .sub-steps li::before {
+            content: counter(sub-counter);
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            border-color: #74b9ff;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .completion-demo {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .completion-demo h4 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .habit-item {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .check-button {
+            background: #00b894;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .check-button:hover {
+            background: #00a085;
+            transform: scale(1.05);
+        }
+
+        .contact-info {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .contact-info h3 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .contact-details {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-visual {
+            background: linear-gradient(135deg, #fd79a8, #fdcb6e);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            color: white;
+        }
+
+        .progress-bars {
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.3);
+            height: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 2s ease;
+        }
+
+        .rewards-section {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .reward-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .reward-icon {
+            font-size: 2rem;
+            padding: 15px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .step-section {
+                padding: 20px;
+            }
+            
+            .step-content {
+                margin-left: 0;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .contact-details {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 MOTIVEO</h1>
+            <p>Tu compañero para desarrollar hábitos saludables de manera divertida y personalizada</p>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <h2 class="step-title">🚀 Primeros Pasos</h2>
+            </div>
+            <div class="step-content">
+                <h3>Crear tu cuenta en Motiveo:</h3>
+                <ul class="sub-steps">
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Abre la aplicación</strong> desde tu navegador web o dispositivo móvil
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image.png" alt="Pantalla de inicio de Motiveo" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Haz clic en "Comenzar mi transformación"</strong> y completa tus datos básicos
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image2.png" alt="Formulario de registro en Motiveo" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Revisa tu correo</strong> y confirma tu cuenta con el enlace enviado
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image3.png" alt="Confirmación de email" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>¡Inicia sesión!</strong> Ya estás listo para comenzar tu journey
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image4.png" alt="Pantalla de inicio de sesión" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <h2 class="step-title">✨ Crear tu Primer Hábito</h2>
+            </div>
+            <div class="step-content">
+                <ul class="sub-steps">
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Busca el botón "+"</strong> o "Crear Hábito" en tu pantalla principal
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image5.png" alt="Botón crear hábito en dashboard" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Nombre:</strong> ¿Qué hábito quieres desarrollar? (Ej: "Beber 8 vasos de agua")
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image6.png" alt="Formulario nombre del hábito" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Frecuencia:</strong> ¿Con qué regularidad? (Diario, semanal, personalizado)
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image7.png" alt="Selector de frecuencia con opciones diario, semanal, personalizado" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Categoría:</strong> Selecciona el tipo (Salud, Productividad, Bienestar)
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image1.png" alt="Lista de categorías con iconos (Salud, Productividad, Bienestar)" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Frase:</strong> ¿Selecciona una frase motivadora? (Para sentirte inspirado)
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image8.png" alt="Selector de frase motivadora" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>¡Guarda tu hábito!</strong> Aparecerá inmediatamente en tu lista
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image9.png" alt="Botón Guardar y confirmación con el nuevo hábito en la lista" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <h2 class="step-title">� Recordatorios Personalizados</h2>
+            </div>
+            <div class="step-content">
+                <p><strong>💡 Tip:</strong> Configura tus recordatorios mientras creas cada hábito para no olvidar cumplir tus metas.</p>
+                <ul class="sub-steps">
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Programa alertas</strong> al crear cada hábito en el horario que prefieras
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/step3-1.png" alt="Interfaz de programación de alertas con selector de hora y días de la semana" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Recibe notificaciones</strong> amigables que te motivarán a cumplir tus metas
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/step3-2.png" alt="Ejemplo de notificación push motivacional en la pantalla del dispositivo" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Personaliza en Configuración</strong> - activa/desactiva según necesites
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/step3-3.png" alt="Panel de configuración de notificaciones con toggles y opciones personalizables" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">4</div>
+                <h2 class="step-title">�🗺️ Navegando en Motiveo</h2>
+            </div>
+            <div class="step-content">
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <span class="feature-icon">📋</span>
+                        <div class="feature-title">Mis Hábitos</div>
+                        <div class="feature-desc">Lista completa de todos tus hábitos activos con progreso</div>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">📈</span>
+                        <div class="feature-title">Progreso</div>
+                        <div class="feature-desc">Gráficos y estadísticas de tu avance diario, semanal y mensual</div>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">🏆</span>
+                        <div class="feature-title">Logros</div>
+                        <div class="feature-desc">Medallas, recompensas y tu nivel actual de gamificación</div>
+                    </div>
+                    <div class="feature-card">
+                        <span class="feature-icon">⚙️</span>
+                        <div class="feature-title">Configuración</div>
+                        <div class="feature-desc">Ajustes de cuenta, notificaciones y personalización</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">5</div>
+                <h2 class="step-title">✅ Completar Hábitos</h2>
+            </div>
+            <div class="step-content">
+                <div class="completion-demo">
+                    <h4>¿Cómo marcar un hábito como completado?</h4>
+                    <div class="habit-item">
+                        <span>💧 Beber 8 vasos de agua</span>
+                        <button class="check-button" onclick="this.innerHTML='✅ ¡Completado!'; this.style.background='#00b894';">Completar</button>
+                    </div>
+                    <div class="habit-item">
+                        <span>🏃‍♀️ Ejercicio 30 minutos</span>
+                        <button class="check-button" onclick="this.innerHTML='✅ ¡Completado!'; this.style.background='#00b894';">Completar</button>
+                    </div>
+                </div>
+                <p><strong>¡Es así de fácil!</strong> Solo toca el botón de check (✓) y verás animaciones mientras ganas puntos automáticamente.</p>
+            </div>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">6</div>
+                <h2 class="step-title">🎯 Guías Paso a Paso</h2>
+            </div>
+            <div class="step-content">
+                <ul class="sub-steps">
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Haz clic en cualquier hábito</strong> para ver su guía detallada personalizada
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image10.png" alt="Lista de hábitos con uno seleccionado mostrando cursor de clic" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                    <li class="expandable-step" onclick="toggleImage(this)">
+                        <strong>Navega entre pasos</strong> Faciles de visualizar a simple vista.
+                        <span class="expand-icon">📷</span>
+                        <div class="image-placeholder" style="display: none;">
+                            <div class="image-container">
+                                <img src="images/image11.png" alt="Pantalla de guía con botones de navegación Anterior y Siguiente visibles" style="max-width: 100%; height: auto; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">7</div>
+                <h2 class="step-title">📊 Visualiza tu Progreso</h2>
+            </div>
+            <div class="step-content">
+                <div class="progress-visual">
+                    <h4>Ve tu crecimiento en tiempo real:</h4>
+                    <div class="progress-bars">
+                        <div>Hábitos completados esta semana:
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%; background: #00b894;"></div>
+                            </div>
+                        </div>
+                        <div>Racha actual:
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 70%; background: #74b9ff;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-section">
+            <div class="step-header">
+                <div class="step-number">8</div>
+                <h2 class="step-title">🎮 Sistema de Recompensas</h2>
+            </div>
+            <div class="step-content">
+                <div class="rewards-section">
+                    <h4>¡Gana recompensas por tu constancia!</h4>
+                    <div class="reward-icons">
+                        <span class="reward-icon" data-icon="🏆">🏆</span>
+                        <span class="reward-icon" data-icon="🥇">🥇</span>
+                        <span class="reward-icon" data-icon="⭐">⭐</span>
+                        <span class="reward-icon" data-icon="💎">💎</span>
+                
+
+                    </div>
+                    <p><strong>• Puntos por cada hábito completado</strong></p>
+                    <p><strong>• Medallas por rachas de 7, 30 y 90 días</strong></p>
+                    <p><strong>• Sube de nivel según tu actividad</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="contact-info">
+            <h3>📞 ¿Necesitas ayuda?</h3>
+            <div class="contact-details">
+                <div class="contact-item">
+                    <span>📧</span>
+                    <span>jacobobejarano3@gmail.com</span>
+                </div>
+                <div class="contact-item">
+                    <span>📱</span>
+                    <span>324 643 6528</span>
+                </div>
+            </div>
+            <p style="margin-top: 20px; font-size: 1.1rem;">
+                ¡Gracias por usar <strong>Motiveo</strong>! 🌟<br>
+                <em>Desarrollado con 💙 por José, Ostin y Jacobo</em>
+            </p>
+        </div>
+    </div>
+
+    <script>
+    // La funcionalidad del modal se moverá a script.js
+        // Función para mostrar/ocultar imágenes
+        function toggleImage(element) {
+            const imagePlaceholder = element.querySelector('.image-placeholder');
+            const expandIcon = element.querySelector('.expand-icon');
+            
+            if (imagePlaceholder.style.display === 'none') {
+                imagePlaceholder.style.display = 'block';
+                expandIcon.textContent = '📷';
+                expandIcon.style.color = '#74b9ff';
+            } else {
+                imagePlaceholder.style.display = 'none';
+                expandIcon.textContent = '📷';
+                expandIcon.style.color = '';
+            }
+        }
+
+        // Animación de barras de progreso
+        window.addEventListener('load', function() {
+            const progressBars = document.querySelectorAll('.progress-fill');
+            progressBars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 500);
+            });
+        });
+
+        // Efecto hover para las tarjetas
+        const cards = document.querySelectorAll('.feature-card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -6,7 +6,7 @@
      x-transition:leave="transition ease-in duration-200"
      x-transition:leave-start="opacity-100"
      x-transition:leave-end="opacity-0"
-     class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 flex justify-center pt-8 p-4 items-start"
      @click.self="closeHabitDetails()">
     
     <div x-show="expandedHabit"
@@ -16,22 +16,22 @@
          x-transition:leave="transition ease-in duration-200 transform"
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="bg-gradient-to-br from-gray-900/95 to-gray-800/95 backdrop-blur-lg rounded-2xl border border-motiveo-primary/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+         class="bg-white dark:bg-gray-900 backdrop-blur-lg rounded-2xl border border-gray-200 dark:border-motiveo-primary/30 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl dark:shadow-motiveo-primary/20">
         
         <!-- Header del Modal -->
-        <div class="p-6 border-b border-gray-700/50">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-motiveo-primary to-purple-600 flex items-center justify-center">
-                        <span x-text="expandedHabit?.icon || '<i class=\"fas fa-bullseye\"></i>'" class="text-2xl"></span>
+                        <span x-html="getHabitIcon(expandedHabit)" class="text-xl"></span>
                     </div>
                     <div>
-                        <h3 x-text="expandedHabit?.name" class="text-xl font-bold text-white"></h3>
-                        <p x-text="expandedHabit?.category" class="text-motiveo-primary capitalize"></p>
+                        <h3 x-text="expandedHabit?.name" class="text-xl font-bold text-gray-900 dark:text-white"></h3>
+                        <p x-text="expandedHabit?.category" class="text-gray-600 dark:text-motiveo-primary capitalize font-medium"></p>
                     </div>
                 </div>
                 <button @click="closeHabitDetails()" 
-                        class="text-gray-400 hover:text-white transition-colors">
+                        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
@@ -41,10 +41,10 @@
                 <div class="flex items-center space-x-2">
                     <div class="w-3 h-3 rounded-full"
                          :class="expandedHabit?.is_completed ? 'bg-motiveo-success animate-pulse' : 'bg-motiveo-warning'"></div>
-                    <span class="text-sm text-gray-300" 
+                    <span class="text-sm text-gray-700 dark:text-gray-300" 
                           x-text="expandedHabit?.is_completed ? 'Completado hoy' : 'Pendiente'"></span>
                 </div>
-                <div class="text-sm text-gray-400">
+                <div class="text-sm text-gray-600 dark:text-gray-400">
                     <span x-text="expandedHabit?.current_streak || 0"></span> días consecutivos
                 </div>
             </div>
@@ -54,20 +54,20 @@
         <div class="p-6 space-y-6">
             <!-- Descripción -->
             <div>
-                <h4 class="text-lg font-semibold text-white mb-2"><i class="fas fa-file-alt mr-2"></i>Descripción</h4>
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-2"><i class="fas fa-file-alt mr-2 text-motiveo-primary"></i>Descripción</h4>
                 <p x-text="expandedHabit?.description || 'Sin descripción disponible'" 
-                   class="text-gray-300 leading-relaxed"></p>
+                   class="text-gray-600 dark:text-gray-300 leading-relaxed"></p>
             </div>
 
             <!-- Progreso visual -->
             <div>
-                <h4 class="text-lg font-semibold text-white mb-3"><i class="fas fa-chart-line mr-2"></i>Progreso</h4>
-                <div class="bg-gray-800/50 rounded-lg p-4">
-                    <div class="flex justify-between text-sm text-gray-400 mb-2">
-                        <span>Días completados</span>
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-3"><i class="fas fa-chart-line mr-2 text-motiveo-primary"></i>Progreso</h4>
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        <span class="font-medium">Días completados</span>
                         <span x-text="`${expandedHabit?.completed_days || 0} / ${expandedHabit?.duration_days || 30}`"></span>
                     </div>
-                    <div class="w-full bg-gray-700 rounded-full h-3">
+                    <div class="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-3">
                         <div class="bg-gradient-to-r from-motiveo-primary to-motiveo-success h-3 rounded-full transition-all duration-300"
                              :style="`width: ${expandedHabit ? (expandedHabit.completed_days || 0) / (expandedHabit.duration_days || 30) * 100 : 0}%`"></div>
                     </div>
@@ -76,15 +76,15 @@
 
             <!-- Guía paso a paso -->
             <div x-show="expandedHabit && !(expandedHabit.today_completed || expandedHabit.status === 'completed')">
-                <h4 class="text-lg font-semibold text-white mb-3"><i class="fas fa-route mr-2"></i>Guía paso a paso</h4>
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-3"><i class="fas fa-route mr-2 text-motiveo-primary"></i>Guía paso a paso</h4>
                 <div class="space-y-3">
                     <template x-for="(step, index) in getHabitSteps(expandedHabit)" :key="index">
-                        <div class="flex items-start space-x-3 p-3 rounded-lg bg-gray-800/30 border border-gray-700/50 hover:border-motiveo-primary/30 transition-colors">
+                        <div class="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-motiveo-primary/50 dark:hover:border-motiveo-primary/30 transition-colors">
                             <div class="w-6 h-6 rounded-full bg-motiveo-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span x-text="index + 1" class="text-xs font-bold text-motiveo-primary"></span>
+                                <span x-text="index + 1" class="text-xs font-bold text-motiveo-primary dark:text-motiveo-primary"></span>
                             </div>
                             <div class="flex-1">
-                                <p x-text="step" class="text-gray-300 text-sm leading-relaxed"></p>
+                                <p x-text="step" class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed"></p>
                             </div>
                         </div>
                     </template>
@@ -93,11 +93,11 @@
 
             <!-- Estadísticas adicionales -->
             <div class="grid grid-cols-2 gap-4">
-                <div class="bg-gray-800/30 rounded-lg p-4 text-center">
+                <div class="bg-gray-50 dark:bg-gray-800/70 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
                     <div class="text-2xl font-bold text-motiveo-success" x-text="expandedHabit?.current_streak || 0"></div>
-                    <div class="text-sm text-gray-400">Racha actual</div>
+                    <div class="text-sm font-medium text-gray-700 dark:text-gray-400">Racha actual</div>
                 </div>
-                <div class="bg-gray-800/30 rounded-lg p-4 text-center">
+                <div class="bg-gray-50 dark:bg-gray-800/70 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
                     <div class="text-2xl font-bold text-motiveo-warning" x-text="expandedHabit?.best_streak || 0"></div>
                     <div class="text-sm text-gray-400">Mejor racha</div>
                 </div>

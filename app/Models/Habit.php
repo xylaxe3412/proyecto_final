@@ -33,6 +33,7 @@ class Habit extends Model
         'start_date',
         'expected_end_date',
         'completed_today',
+        'selected_days',
     ];
 
     protected $casts = [
@@ -44,6 +45,7 @@ class Habit extends Model
         'is_completed' => 'boolean',
         'is_active' => 'boolean',
         'completed_today' => 'boolean',
+        'selected_days' => 'array',
     ];
 
     public function user()
@@ -83,6 +85,11 @@ class Habit extends Model
 
         // Dar XP al usuario
         $this->user->addXP(20, "Completar habito: {$this->nombre}");
+
+        // Verificar logros de hábitos completados y rachas
+        $achievementService = app(\App\Services\AchievementService::class);
+        $achievementService->checkHabitsCompletedAchievements($this->user, $this->user->getTotalHabitsCompleted());
+        $achievementService->checkStreakAchievements($this->user);
 
         return true;
     }

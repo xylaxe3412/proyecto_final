@@ -9,11 +9,25 @@ export default {
         './resources/views/**/*.blade.php',
     ],
 
+    darkMode: 'class',
     theme: {
         extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            colors: {
+                'motiveo-primary': '#6366f1',
+                'motiveo-secondary': '#8b5cf6',
+                'motiveo-accent': '#06b6d4',
+                'motiveo-success': '#10b981',
+                'motiveo-warning': '#f59e0b',
+                'motiveo-pink': '#ec4899',
+                'motiveo-dark': '#1e1b4b'
+            },
+            backgroundColor: {
+                light: '#ffffff',
+                dark: '#111827'
+            }
         },
     },
 

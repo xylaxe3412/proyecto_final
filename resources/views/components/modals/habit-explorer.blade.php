@@ -16,14 +16,14 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="bg-gradient-to-br from-motiveo-dark/95 to-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-6xl max-h-[85vh] border border-white/10 overflow-hidden"
+         class="bg-gradient-to-br from-white/95 to-gray-100/95 dark:from-motiveo-dark/95 dark:to-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-6xl max-h-[85vh] border border-gray-200 dark:border-white/10 overflow-hidden"
          @click.stop>
         
         <!-- Header -->
         <div class="flex items-center justify-between p-6 border-b border-white/10">
             <div>
-                <h2 class="text-2xl font-bold text-white">Explorador de Hábitos</h2>
-                <p class="text-white/60 mt-1">Descubre más de 50 hábitos organizados por categorías</p>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Explorador de Hábitos</h2>
+                <p class="text-gray-600 dark:text-white/60 mt-1">Descubre más de 50 hábitos organizados por categorías</p>
             </div>
             <button @click.stop="showHabitExplorer = false" class="text-gray-400 hover:text-gray-600">
                 <i class="fas fa-times text-xl"></i>
@@ -41,8 +41,8 @@
                                @click.stop
                                type="text" 
                                placeholder="Buscar hábitos..." 
-                               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-motiveo-primary">
-                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50"></i>
+                               class="w-full bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-xl px-4 py-3 pl-10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-motiveo-primary">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-white/50"></i>
                     </div>
                 </div>
 
@@ -178,7 +178,7 @@
 
             <!-- Results Count -->
             <div x-show="!explorerLoading && explorerHabits.length > 0" class="mb-4">
-                <p class="text-white/70 text-sm">
+                <p class="text-gray-600 dark:text-white/70 text-sm">
                     <span x-text="explorerHabits.length"></span> hábitos encontrados
                 </p>
             </div>
@@ -187,14 +187,14 @@
             <div x-show="!explorerLoading && explorerHabits.length > 0" 
                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <template x-for="habit in explorerHabits" :key="habit.id">
-                    <div class="bg-white/5 hover:bg-white/10 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all group">
+                    <div class="bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all group">
                         <!-- Habit Header -->
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex items-center space-x-3">
                                 <div class="text-2xl" x-html="habit.icon || getHabitIcon(habit)"></div>
                                 <div>
-                                    <div class="text-white font-medium" x-text="habit.name"></div>
-                                    <div class="text-white/60 text-xs" x-text="habit.description"></div>
+                                    <div class="text-gray-900 dark:text-white font-medium" x-text="habit.name"></div>
+                                    <div class="text-gray-600 dark:text-white/60 text-xs" x-text="habit.description"></div>
                                 </div>
                             </div>
                             <div class="text-xs text-white/50">
@@ -203,7 +203,7 @@
                         </div>
 
                         <!-- Description -->
-                        <p class="text-white/70 text-xs mb-3 line-clamp-2" x-text="habit.description"></p>
+                        <p class="text-gray-700 dark:text-white/70 text-xs mb-3 line-clamp-2" x-text="habit.description"></p>
 
                         <!-- Benefits -->
                         <div x-show="habit.benefits" class="mb-3">
@@ -218,7 +218,7 @@
                             <p class="text-white/60 text-xs mb-1">
                                 <span class="text-motiveo-accent"><i class="fas fa-list-ul mr-1"></i>Pasos:</span>
                             </p>
-                            <ul class="text-xs text-white/50 space-y-1">
+                            <ul class="text-xs text-gray-600 dark:text-white/50 space-y-1">
                                 <template x-for="(step, index) in habit.steps.slice(0, 2)" :key="index">
                                     <li class="flex items-start space-x-2">
                                         <span class="text-motiveo-accent mt-0.5"><i class="fas fa-circle text-xs"></i></span>
@@ -238,7 +238,7 @@
                                 <i class="fas fa-plus mr-1"></i>Agregar Hábito
                             </button>
                             <button @click.stop="showHabitDetails(habit)"
-                                    class="bg-white/10 hover:bg-white/20 text-white py-2 px-3 rounded-lg text-xs font-medium transition-all">
+                                    class="bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-700 dark:text-white py-2 px-3 rounded-lg text-xs font-medium transition-all">
                                 <i class="fas fa-eye mr-1"></i>Ver
                             </button>
                         </div>

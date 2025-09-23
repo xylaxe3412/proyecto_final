@@ -16,8 +16,14 @@ use App\Http\Controllers\PreguntasFormController;
 use App\Http\Controllers\HabitController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\SuggestionsController;
+use App\Http\Controllers\AchievementController;
 
 Route::middleware(['auth'])->group(function () {
+    // Rutas de logros
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+    Route::post('/achievements/check', [AchievementController::class, 'checkAchievements'])->name('achievements.check');
+    Route::get('/achievements/{achievement}/progress', [AchievementController::class, 'getProgress'])->name('achievements.progress');
+
     // —————— Ruta de debug temporal ——————
     Route::get('/debug-habits', function() {
         $suggestions = \App\Models\HabitSuggestion::all();
@@ -73,8 +79,17 @@ Route::middleware(['auth'])->group(function () {
         ->name('habits.createFromSuggestion');
     Route::get('/api/user-habits', [HabitController::class, 'getUserHabits'])
         ->name('api.userHabits');
+    Route::get('/api/user-streak', [HabitController::class, 'getUserStreak'])
+        ->name('api.userStreak');
     Route::get('/api/suggestions', [SuggestionsController::class, 'getSuggestions'])
         ->name('api.suggestions');
+
+    // —————— Página de Prueba de Notificaciones (Solo en Debug) ——————
+    if (config('app.debug')) {
+        Route::get('/streak-test', function() {
+            return view('streak-test');
+        })->name('streak.test');
+    }
 
     // —————— Quiz de Hábitos ——————
     Route::get('/quiz', [QuizController::class, 'show'])
@@ -105,6 +120,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Rutas de logros
+    Route::get('/achievements', [AchievementController::class, 'index'])->name('achievements.index');
+    Route::post('/achievements/check', [AchievementController::class, 'checkAchievements'])->name('achievements.check');
+    Route::get('/achievements/{achievement}/progress', [AchievementController::class, 'getProgress'])->name('achievements.progress');
 });
 
 // Google OAuth routes

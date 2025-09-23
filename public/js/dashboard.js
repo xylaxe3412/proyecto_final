@@ -17,10 +17,36 @@ function habitApp() {
             description: '',
             frequency: 'diario',
             category: 'bienestar',
-            duration_days: 30,
+            duration_days: '30',
+            custom_duration: '30',
             motivation: '',
+            generated_motivation: '',
             reward: '',
-            start_date: new Date().toISOString().split('T')[0]
+            start_date: new Date().toISOString().split('T')[0],
+            selectedDays: []
+        },
+        toggleDay(index) {
+            // Inicializar el array si no existe
+            if (!this.createForm.selectedDays) {
+                this.createForm.selectedDays = [];
+            }
+            
+            // Convertir el índice a número
+            index = Number(index);
+            
+            // Buscar el índice en el array actual
+            const currentIndex = this.createForm.selectedDays.indexOf(index);
+            
+            // Si ya existe, lo quitamos
+            if (currentIndex !== -1) {
+                this.createForm.selectedDays.splice(currentIndex, 1);
+            } else {
+                // Si no existe, lo añadimos
+                this.createForm.selectedDays.push(index);
+            }
+            
+            // Forzar la reactividad creando un nuevo array
+            this.createForm.selectedDays = Array.from(this.createForm.selectedDays).sort((a, b) => a - b);
         },
         editForm: {
             id: null,
@@ -40,6 +66,19 @@ function habitApp() {
         notification: {
             show: false,
             message: ''
+        },
+        // Sistema de notificaciones de racha
+        streakNotifications: {
+            warning: { show: false, message: '', days: 0 },
+            started: { show: false, message: '', days: 0 },
+            saved: { show: false, message: '', days: 0 },
+            record: { show: false, message: '', days: 0 }
+        },
+        streakData: {
+            current: 0,
+            best: 0,
+            lastCompleted: null,
+            hoursUntilReset: 0
         },
         expandedHabit: null,
         fromExplorer: false, // Para recordar si se vino del explorador
@@ -66,6 +105,139 @@ function habitApp() {
         init() {
             this.loadUserHabits();
             this.loadSuggestions();
+            this.loadStreakData();
+            this.startStreakMonitoring();
+            
+            // 🧪 Hacer la instancia accesible para pruebas
+            window.habitAppInstance = this;
+        },
+
+        // Cargar datos de racha del usuario
+        async loadStreakData() {
+            try {
+                const response = await fetch('/api/user-streak');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.streakData = {
+                        current: data.current_streak || 0,
+                        best: data.best_streak || 0,
+                        lastCompleted: data.last_completed,
+                        hoursUntilReset: data.hours_until_reset || 0
+                    };
+                    // Solo verificar advertencias, no logs de debug constantes
+                    this.checkStreakWarnings();
+                } else {
+                    console.error('❌ Error en respuesta del servidor:', response.status);
+                }
+            } catch (error) {
+                console.error('❌ Error loading streak data:', error);
+            }
+        },
+
+        // Monitoreo automático de rachas
+        startStreakMonitoring() {
+            // Verificar cada 30 minutos si hay riesgo de perder racha
+            setInterval(() => {
+                this.loadStreakData();
+            }, 30 * 60 * 1000); // 30 minutos
+
+            // Verificar advertencias más frecuentemente
+            setInterval(() => {
+                this.checkStreakWarnings();
+            }, 5 * 60 * 1000); // 5 minutos
+        },
+
+        // Verificar si hay que mostrar advertencias de racha
+        checkStreakWarnings() {
+            // Solo verificar advertencias si hay una racha activa (> 0 días)
+            if (this.streakData.current === 0 || !this.streakData.current) {
+                return;
+            }
+
+            const hoursLeft = this.streakData.hoursUntilReset;
+            
+            // Solo mostrar advertencias si realmente hay riesgo
+            if (hoursLeft <= 0) {
+                return;
+            }
+            
+            // Advertencia crítica - menos de 2 horas
+            if (hoursLeft <= 2 && hoursLeft > 0) {
+                this.showStreakNotification('warning', 
+                    `⚠️ ¡Tu racha de ${this.streakData.current} días está en riesgo! Quedan menos de ${Math.ceil(hoursLeft)} horas`, 
+                    this.streakData.current
+                );
+            }
+            // Advertencia temprana - menos de 6 horas
+            else if (hoursLeft <= 6 && hoursLeft > 2) {
+                this.showStreakNotification('warning', 
+                    `⏰ ¡Recuerda mantener tu racha de ${this.streakData.current} días! Quedan ${Math.ceil(hoursLeft)} horas`, 
+                    this.streakData.current
+                );
+            }
+        },
+
+        // Mostrar notificación de racha específica
+        showStreakNotification(type, message, days) {
+            if (this.streakNotifications[type]) {
+                this.streakNotifications[type] = {
+                    show: true,
+                    message: message,
+                    days: days
+                };
+                
+                console.log(`✅ Notificación ${type} configurada:`, this.streakNotifications[type]);
+
+                // Auto-ocultar después de 8 segundos para notificaciones de racha
+                setTimeout(() => {
+                    if (this.streakNotifications[type]) {
+                        this.streakNotifications[type].show = false;
+                        console.log(`⏰ Auto-ocultando notificación ${type}`);
+                    }
+                }, 8000);
+            } else {
+                console.error(`❌ Tipo de notificación inválido: ${type}`);
+            }
+        },
+
+        // Cerrar notificación de racha específica
+        closeStreakNotification(type) {
+            if (this.streakNotifications[type]) {
+                this.streakNotifications[type].show = false;
+            }
+        },
+
+        // Actualizar el display de racha en el header
+        updateStreakDisplay() {
+            const streakElement = document.querySelector('#streak-number');
+            if (streakElement) {
+                const currentDays = parseInt(streakElement.textContent) || 0;
+                const newDays = this.streakData.current;
+                
+                if (newDays !== currentDays) {
+                    // Animar el cambio de número
+                    const streakCounter = document.querySelector('#streak-counter');
+                    
+                    // Añadir una animación especial al contador completo
+                    if (streakCounter) {
+                        streakCounter.style.transform = 'scale(1.1)';
+                        streakCounter.style.transition = 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                    }
+                    
+                    streakElement.style.transform = 'scale(1.3)';
+                    streakElement.style.color = '#fbbf24';
+                    streakElement.style.transition = 'all 0.3s ease';
+                    
+                    setTimeout(() => {
+                        streakElement.textContent = newDays;
+                        if (streakCounter) {
+                            streakCounter.style.transform = '';
+                        }
+                        streakElement.style.transform = '';
+                        streakElement.style.color = '';
+                    }, 200);
+                }
+            }
         },
 
         // Función para reproducir sonido de hábito completado
@@ -77,7 +249,6 @@ function habitApp() {
                 if (window.SoundEffects) {
                     try {
                         window.SoundEffects.playHabitComplete();
-                        console.log('✅ Sonido de hábito completado reproducido exitosamente');
                         return true;
                     } catch (error) {
                         console.error('❌ Error al reproducir sonido:', error);
@@ -116,7 +287,6 @@ function habitApp() {
                 if (window.SoundEffects) {
                     try {
                         window.SoundEffects.playLifeLost();
-                        console.log('✅ Sonido de vida perdida reproducido exitosamente');
                         return true;
                     } catch (error) {
                         console.error('❌ Error al reproducir sonido:', error);
@@ -148,7 +318,6 @@ function habitApp() {
 
         async loadUserHabits() {
             try {
-                console.log('[LOADING] Cargando hábitos del usuario...');
                 const response = await fetch('/api/user-habits');
                 
                 if (!response.ok) {
@@ -156,19 +325,12 @@ function habitApp() {
                 }
                 
                 const data = await response.json();
-                console.log('[DATA] Datos recibidos:', data);
                 
                 this.activeHabits = data.active_habits || [];
                 this.completedHabits = data.completed_today || [];
                 this.userHabits = [...this.activeHabits, ...this.completedHabits];
                 this.totalHabits = this.userHabits.length;
                 this.userStats = data.user_stats;
-                
-                console.log('[SUCCESS] Hábitos cargados:', {
-                    activos: this.activeHabits.length,
-                    completados: this.completedHabits.length,
-                    total: this.userHabits.length
-                });
                 
                 // Auto-mostrar sugerencias si no hay hábitos
                 if (this.userHabits.length === 0) {
@@ -319,6 +481,32 @@ function habitApp() {
                     if (data.user_stats) {
                         this.userStats = data.user_stats;
                     }
+
+                    // Manejar notificaciones de racha
+                    if (data.streak_data) {
+                        const oldCurrent = this.streakData.current;
+                        const oldBest = this.streakData.best;
+                        
+                        this.streakData = {
+                            current: data.streak_data.current || 0,
+                            best: data.streak_data.best || 0,
+                            lastCompleted: data.streak_data.last_completed,
+                            hoursUntilReset: data.streak_data.hours_until_reset || 0
+                        };
+
+                        // Mostrar notificación basada en la respuesta del servidor
+                        if (data.streak_data.notification_type && data.streak_data.notification_message) {
+                            console.log('🔔 Mostrando notificación de racha:', data.streak_data.notification_type, data.streak_data.notification_message);
+                            this.showStreakNotification(
+                                data.streak_data.notification_type, 
+                                data.streak_data.notification_message, 
+                                this.streakData.current
+                            );
+                        }
+
+                        // Actualizar el contador de racha en el header si existe
+                        this.updateStreakDisplay();
+                    }
                     
                     // Verificar level-up y mostrar confetti
                     if (data.leveled_up) {
@@ -435,6 +623,11 @@ function habitApp() {
                     this.showNotification('Por favor, ingresa el nombre del hábito');
                     return;
                 }
+            } else if (this.createForm.step === 2) {
+                if (this.createForm.frequency === 'semanal' && this.createForm.selectedDays.length === 0) {
+                    this.showNotification('Por favor, selecciona al menos un día de la semana');
+                    return;
+                }
             } else if (this.createForm.step === 3) {
                 if (!this.createForm.motivation.trim()) {
                     this.showNotification('Por favor, describe tu motivación');
@@ -449,25 +642,69 @@ function habitApp() {
 
         async submitCreateForm() {
             try {
+                if (this.createForm.frequency === 'semanal' && (!this.createForm.selectedDays || this.createForm.selectedDays.length === 0)) {
+                    this.showNotification('Por favor, selecciona al menos un día de la semana');
+                    return;
+                }
+
+                console.log('Tipo de selectedDays:', typeof this.createForm.selectedDays);
+                console.log('Es array?', Array.isArray(this.createForm.selectedDays));
+                console.log('Valor de selectedDays:', this.createForm.selectedDays);
+                console.log('Contenido completo del formulario:', this.createForm);
+
+                // Validar los días seleccionados para frecuencia semanal
+                if (this.createForm.frequency === 'semanal') {
+                    if (!Array.isArray(this.createForm.selectedDays) || this.createForm.selectedDays.length === 0) {
+                        this.showNotification('Por favor, selecciona al menos un día de la semana');
+                        return;
+                    }
+                }
+                
+                // Preparar los días seleccionados como un array de números
+                const selected_days = this.createForm.frequency === 'semanal'
+                    ? Array.from(this.createForm.selectedDays).map(Number)
+                    : [];
+                
+                console.log('Formulario a enviar:', {
+                    frequency: this.createForm.frequency,
+                    selected_days: selected_days
+                });
+
+                const formData = {
+                    name: this.createForm.name,
+                    description: this.createForm.description || '',
+                    frequency: this.createForm.frequency,
+                    categoria: this.createForm.category,
+                    duration_days: this.getFinalDuration(),
+                    motivation: this.createForm.motivation,
+                    reward: this.createForm.reward || '',
+                    start_date: this.createForm.start_date,
+                    selected_days: selected_days
+                };
+
+                console.log('Datos del formulario:', formData);
+
                 const response = await fetch('/habits', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        name: this.createForm.name,
-                        description: this.createForm.description,
-                        frequency: this.createForm.frequency,
-                        categoria: this.createForm.category,
-                        duration_days: this.createForm.duration_days,
-                        motivation: this.createForm.motivation,
-                        reward: this.createForm.reward,
-                        start_date: this.createForm.start_date
-                    })
+                    body: JSON.stringify(formData)
                 });
 
                 const data = await response.json();
+
+                if (!response.ok) {
+                    console.error('Error en la respuesta:', data);
+                    if (data.errors) {
+                        const errorMessages = Object.values(data.errors).flat().join('\\n');
+                        this.showNotification(errorMessages);
+                    } else {
+                        this.showNotification(data.message || 'Error al crear el hábito');
+                    }
+                    return;
+                }
                 
                 if (data.success) {
                     this.showNotification(data.message);
@@ -509,11 +746,78 @@ function habitApp() {
                 description: '',
                 frequency: 'diario',
                 category: 'bienestar',
-                duration_days: 30,
+                duration_days: '30',
+                custom_duration: '30',
                 motivation: '',
+                generated_motivation: '',
                 reward: '',
-                start_date: new Date().toISOString().split('T')[0]
+                start_date: new Date().toISOString().split('T')[0],
+                selectedDays: new Array()
             };
+        },
+
+        // Generador de frases motivadoras basado en la categoría
+        generateMotivationalPhrase() {
+            const phrases = {
+                bienestar: [
+                    "Cada día que cuido mi bienestar, invierto en mi mejor versión.",
+                    "Mi salud y felicidad son mi mayor prioridad.",
+                    "Merezco dedicar tiempo a cuidarme y sentirme bien.",
+                    "Cada pequeño paso hacia mi bienestar cuenta.",
+                    "Soy responsable de crear la vida que deseo vivir."
+                ],
+                productividad: [
+                    "Cada día soy más eficiente y logro mis objetivos.",
+                    "Mi disciplina de hoy construye el éxito de mañana.",
+                    "Cada tarea completada me acerca a mis metas.",
+                    "Organizar mi tiempo es organizar mi vida.",
+                    "La productividad no es trabajar más, sino trabajar mejor."
+                ],
+                finanzas: [
+                    "Cada peso ahorrado es un paso hacia mi libertad financiera.",
+                    "Mis decisiones financieras de hoy aseguran mi futuro.",
+                    "Merezco tener estabilidad y prosperidad económica.",
+                    "Administrar bien mi dinero es cuidar mi futuro.",
+                    "Cada día mejoro mi relación con el dinero."
+                ],
+                relaciones: [
+                    "Las relaciones fuertes se construyen día a día.",
+                    "Invertir tiempo en mis seres queridos es la mejor inversión.",
+                    "Cada conversación sincera fortalece nuestros vínculos.",
+                    "Merezco relaciones llenas de amor y respeto mutuo.",
+                    "Ser presente para otros me hace crecer como persona."
+                ],
+                salud: [
+                    "Mi cuerpo es mi templo y merece el mejor cuidado.",
+                    "Cada día elijo opciones que nutren mi salud.",
+                    "Cuidar mi salud hoy me da energía para el mañana.",
+                    "Soy capaz de crear hábitos que transforman mi bienestar.",
+                    "Mi salud es la base de todo lo que quiero lograr."
+                ],
+                aprendizaje: [
+                    "Cada día que aprendo algo nuevo, crezco como persona.",
+                    "Mi mente es como un músculo que se fortalece con el uso.",
+                    "El conocimiento que adquiero hoy abre puertas mañana.",
+                    "Nunca es tarde para aprender algo que me apasione.",
+                    "Cada libro, curso o experiencia me hace más completo."
+                ]
+            };
+
+            const categoryPhrases = phrases[this.createForm.category] || phrases.bienestar;
+            const randomPhrase = categoryPhrases[Math.floor(Math.random() * categoryPhrases.length)];
+            this.createForm.generated_motivation = randomPhrase;
+        },
+
+        // Usar la frase generada como motivación
+        useGeneratedMotivation() {
+            this.createForm.motivation = this.createForm.generated_motivation;
+        },
+
+        // Obtener duración final considerando personalizada
+        getFinalDuration() {
+            return this.createForm.duration_days === 'custom' 
+                ? parseInt(this.createForm.custom_duration) 
+                : parseInt(this.createForm.duration_days);
         },
 
         showNotification(message) {
@@ -732,10 +1036,6 @@ function habitApp() {
                 if (data.success) {
                     this.showNotification(data.message);
                     
-                    // Debug: mostrar datos recibidos
-                    console.log('[HABIT ACTION] Datos recibidos del servidor:', data);
-                    console.log('[HABIT ACTION] Hábito actualizado:', data.habit);
-                    
                     // Reproducir sonido según la acción y prioridad
                     if (action === 'undo') {
                         // Sonido de vida perdida al deshacer un hábito
@@ -750,41 +1050,28 @@ function habitApp() {
                     
                     // Actualizar el hábito específico con los nuevos datos del backend
                     if (data.habit) {
-                        console.log('[HABIT UPDATE] Actualizando hábito ID:', habitId);
-                        console.log('[HABIT UPDATE] Estado is_completed:', data.habit.is_completed);
-                        
                         // Encontrar y actualizar el hábito en la lista principal
                         const habitIndex = this.userHabits.findIndex(h => h.id === habitId);
                         if (habitIndex !== -1) {
-                            console.log('[HABIT UPDATE] Hábito antes:', this.userHabits[habitIndex]);
                             this.userHabits[habitIndex] = { ...this.userHabits[habitIndex], ...data.habit };
-                            console.log('[HABIT UPDATE] Hábito después:', this.userHabits[habitIndex]);
                         }
                         
                         // Actualizar también en activeHabits si existe
                         const activeIndex = this.activeHabits.findIndex(h => h.id === habitId);
                         if (activeIndex !== -1) {
-                            console.log('[ACTIVE HABITS] Actualizando en activeHabits');
                             this.activeHabits[activeIndex] = { ...this.activeHabits[activeIndex], ...data.habit };
                         }
                         
                         // Actualizar también en completedHabits si existe
                         const completedIndex = this.completedHabits.findIndex(h => h.id === habitId);
                         if (completedIndex !== -1) {
-                            console.log('[COMPLETED HABITS] Actualizando en completedHabits');
                             this.completedHabits[completedIndex] = { ...this.completedHabits[completedIndex], ...data.habit };
                         }
                         
                         // Actualizar el hábito expandido inmediatamente
                         if (this.expandedHabit && this.expandedHabit.id === habitId) {
-                            console.log('[EXPANDED HABIT] Actualizando hábito expandido');
                             this.expandedHabit = { ...this.expandedHabit, ...data.habit };
                         }
-                        
-                        // Forzar reactividad de Alpine
-                        this.$nextTick(() => {
-                            console.log('[REACTIVITY] Estado final del hábito:', this.userHabits.find(h => h.id === habitId));
-                        });
                     }
                     
                     // Actualizar stats del usuario si están en la respuesta
@@ -956,13 +1243,11 @@ function habitApp() {
 
         // Habit Explorer Methods
         async openHabitExplorer() {
-            console.log('Opening habit explorer...');
             this.showHabitExplorer = true;
             await this.loadAllHabits();
         },
 
         async loadAllHabits() {
-            console.log('Loading all habits...');
             this.explorerLoading = true;
             try {
                 const params = new URLSearchParams({

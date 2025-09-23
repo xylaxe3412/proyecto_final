@@ -7,8 +7,8 @@
     <div class="text-6xl mb-6 text-motiveo-primary animate-bounce-gentle">
         <i class="fas fa-bullseye animate-icon-bounce"></i>
     </div>
-    <h3 class="text-2xl font-bold text-white mb-4 animate-text-glow">¡Comienza tu viaje!</h3>
-    <p class="text-white/60 mb-8 max-w-lg mx-auto animate-text-shimmer">
+    <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4 animate-text-glow">¡Comienza tu viaje!</h3>
+    <p class="text-gray-600 dark:text-white/60 mb-8 max-w-lg mx-auto animate-text-shimmer">
         Aún no tienes hábitos creados. Comienza creando tu primer hábito y da el primer paso hacia una mejor versión de ti mismo.
     </p>
     <button @click="showCreateModal = true" 

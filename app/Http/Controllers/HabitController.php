@@ -24,10 +24,6 @@ class HabitController extends Controller
         // Hábitos sugeridos más populares
         $suggestedHabits = HabitSuggestion::popular(6);
         
-        // Debug: verificar si hay sugerencias
-        \Log::info('Sugerencias encontradas: ' . $suggestedHabits->count());
-        \Log::info('Sugerencias: ' . $suggestedHabits->pluck('name')->implode(', '));
-        
         // Estadísticas del usuario
         $userStats = [
             'xp' => $user->xp,
@@ -115,6 +111,39 @@ class HabitController extends Controller
             // Verificar si subió de nivel
             $user->refresh(); // Recargar datos del usuario
             $leveledUp = $user->level > $previousLevel;
+
+            // Verificar si es el primer hábito completado hoy
+            $habitsCompletedToday = Habit::completedToday($user->id)->count();
+            $isFirstHabitToday = $habitsCompletedToday === 1; // Solo este hábito completado hoy
+
+            // Obtener datos de racha actualizados
+            $currentStreak = $user->getCurrentBestStreak();
+            $bestStreak = $user->getBestStreak();
+            $previousBestStreak = $bestStreak; // Para comparar si es nuevo récord
+            $lastCompleted = now();
+            $hoursUntilReset = now()->copy()->addDay()->startOfDay()->diffInHours(now());
+
+            // Determinar el tipo de notificación de racha
+            $streakNotificationType = null;
+            $streakMessage = '';
+
+            if ($isFirstHabitToday) {
+                if ($currentStreak === 1) {
+                    // Racha iniciada (primer día)
+                    $streakNotificationType = 'started';
+                    $streakMessage = '🔥 ¡Racha iniciada! Comienza tu jornada de hábitos consecutivos';
+                } else if ($currentStreak > 1) {
+                    // Racha mantenida
+                    $streakNotificationType = 'saved';
+                    $streakMessage = "🔥 ¡Racha salvada! Llevas {$currentStreak} días consecutivos";
+                    
+                    // Verificar si es nuevo récord
+                    if ($currentStreak > $previousBestStreak) {
+                        $streakNotificationType = 'record';
+                        $streakMessage = "🏆 ¡Nuevo récord personal! {$currentStreak} días consecutivos";
+                    }
+                }
+            }
             
             return response()->json([
                 'success' => true,
@@ -144,7 +173,16 @@ class HabitController extends Controller
                     'level' => $user->level,
                     'progress' => $user->getLevelProgress(),
                     'next_level_xp' => $user->getXpForNextLevel(),
-                    'completed_today' => Habit::completedToday($user->id)->count()
+                    'completed_today' => $habitsCompletedToday
+                ],
+                'streak_data' => [
+                    'current' => $currentStreak,
+                    'best' => $bestStreak,
+                    'last_completed' => $lastCompleted->toISOString(),
+                    'hours_until_reset' => $hoursUntilReset,
+                    'is_first_today' => $isFirstHabitToday,
+                    'notification_type' => $streakNotificationType,
+                    'notification_message' => $streakMessage
                 ]
             ]);
         } else {
@@ -214,15 +252,40 @@ class HabitController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'frequency' => 'required|in:diario,semanal',
-            'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje,finanzas',
-            'motivation' => 'required|string',
-            'reward' => 'nullable|string',
-            'duration_days' => 'nullable|integer|min:1|max:365'
+        \Log::info('Recibiendo petición de creación de hábito:', [
+            'frequency' => $request->frequency,
+            'selected_days' => $request->selected_days
         ]);
+
+        try {
+            // Validar que selected_days sea un array cuando la frecuencia es semanal
+            if ($request->frequency === 'semanal' && !is_array($request->selected_days)) {
+                throw new \Illuminate\Validation\ValidationException(validator([], []), [
+                    'selected_days' => ['The selected days field must be an array.']
+                ]);
+            }
+
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'frequency' => 'required|in:diario,semanal',
+                'selected_days' => ($request->frequency === 'semanal' ? 'required|array|min:1' : ''),
+                'selected_days.*' => ($request->frequency === 'semanal' ? 'required|integer|min:0|max:6' : ''),
+                'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje,finanzas,relaciones',
+                'motivation' => 'required|string',
+                'reward' => 'nullable|string',
+                'duration_days' => 'nullable|integer|min:1|max:365'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Error de validación:', ['errors' => $e->errors()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        \Log::info('Validación exitosa');
 
         $user = auth()->user();
         $previousLevel = $user->level;
@@ -268,6 +331,9 @@ class HabitController extends Controller
             'template_id' => $templateId,
             'template_version' => $templateVersion,
             'sync_enabled' => true,
+            'selected_days' => $request->frequency === 'semanal' ? 
+                (is_array($request->selected_days) ? array_values($request->selected_days) : []) : 
+                null,
         ]);
 
         // Dar XP por crear hábito
@@ -674,7 +740,7 @@ class HabitController extends Controller
         $request->validate([
             'nombre' => 'required|string|max:255',
             'categoria' => 'required|in:salud,productividad,bienestar,aprendizaje,finanzas',
-            'duration_days' => 'required|integer|in:21,30,60,90',
+            'duration_days' => 'required|integer|min:7|max:365',
             'motivation' => 'nullable|string|max:500',
             'reward' => 'nullable|string|max:255'
         ]);
@@ -785,6 +851,38 @@ class HabitController extends Controller
             'by_category' => $groupedSuggestions,
             'categories' => ['salud', 'productividad', 'bienestar', 'aprendizaje', 'finanzas', 'relaciones'],
             'total' => $suggestions->count()
+        ]);
+    }
+
+    /**
+     * Obtener datos de racha del usuario
+     */
+    public function getUserStreak()
+    {
+        $user = auth()->user();
+        
+        // Calcular la racha actual y mejor racha
+        $currentStreak = $user->getCurrentBestStreak();
+        $bestStreak = $user->getBestStreak();
+        
+        // Obtener la última fecha de completado
+        $lastCompleted = $user->habits()
+            ->where('is_active', true)
+            ->whereDate('updated_at', today())
+            ->where('today_completed', true)
+            ->max('updated_at');
+            
+        // Calcular horas hasta el reset (medianoche)
+        $now = now();
+        $midnight = $now->copy()->addDay()->startOfDay();
+        $hoursUntilReset = $midnight->diffInHours($now);
+        
+        return response()->json([
+            'current_streak' => $currentStreak,
+            'best_streak' => $bestStreak,
+            'last_completed' => $lastCompleted,
+            'hours_until_reset' => $hoursUntilReset,
+            'streak_status' => $currentStreak > 0 ? 'active' : 'inactive'
         ]);
     }
 }

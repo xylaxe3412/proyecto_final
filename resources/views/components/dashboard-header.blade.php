@@ -1,8 +1,8 @@
 <!-- Título y Filtros -->
 <div class="flex justify-between items-center mb-12 animate-slide-up">
     <div class="animate-fade-in-left">
-        <h2 class="text-3xl font-bold text-white mb-2 animate-text-shine">Mis Hábitos</h2>
-        <p class="text-white/60 animate-fade-in-delayed">Gestiona tus hábitos diarios de forma organizada</p>
+        <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 animate-text-shine">Mis Hábitos</h2>
+        <p class="text-gray-600 dark:text-white/60 animate-fade-in-delayed">Gestiona tus hábitos diarios de forma organizada</p>
     </div>
     <div class="flex space-x-3 animate-fade-in-right-delayed">
         <button @click="showCreateModal = true" 
